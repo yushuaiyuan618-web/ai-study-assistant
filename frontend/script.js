@@ -35,6 +35,7 @@ const translations = {
         inputHint: "Press Enter to send · Shift + Enter for a new line",
         you: "You",
         thinking: "Thinking...",
+        localAiError: "Local AI is not available. Please make sure Ollama is running.",
         connectionError: "Unable to connect to the server. Please make sure the backend is running."
     },
     zh: {
@@ -64,7 +65,8 @@ const translations = {
         send: "发送",
         inputHint: "按 Enter 发送 · 按 Shift + Enter 换行",
         you: "你",
-        thinking: "正在处理...",
+        thinking: "正在思考...",
+        localAiError: "本地 AI 暂时无法使用，请确认 Ollama 已经启动。",
         connectionError: "无法连接到服务器，请确认后端已经启动。"
     }
 };
@@ -183,6 +185,7 @@ async function sendMessage() {
         "loading",
         "thinking"
     );
+    let errorTranslationKey = "connectionError";
 
     try {
         const response = await fetch("/api/chat", {
@@ -197,6 +200,9 @@ async function sendMessage() {
         });
 
         if (!response.ok) {
+            if (response.status === 503) {
+                errorTranslationKey = "localAiError";
+            }
             throw new Error("The chat request failed.");
         }
 
@@ -206,9 +212,9 @@ async function sendMessage() {
     } catch {
         loadingMessage.remove();
         displayAssistantMessage(
-            translations[currentLanguage].connectionError,
+            translations[currentLanguage][errorTranslationKey],
             "error",
-            "connectionError"
+            errorTranslationKey
         );
     } finally {
         setSendingState(false);
