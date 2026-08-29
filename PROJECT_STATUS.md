@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Initial application structure created
+Step 2 frontend interface refined
 
 ## Completed
 - Git repository initialized
@@ -10,12 +10,16 @@ Initial application structure created
 - Basic FastAPI backend structure created
 - Basic static frontend structure created
 - Root API endpoint created
+- Responsive AI chat-style frontend interface created
+- Frontend-only user message interaction created
+- English and Simplified Chinese interface switching added
+- Selected interface language is saved in the browser
 
 ## In Progress
 - None
 
 ## Next Step
-- Choose and implement the next feature after approval
+- Review and approve Step 2 before beginning Step 3
 
 ## Important Decisions
 - Development will be incremental.
@@ -23,6 +27,8 @@ Initial application structure created
 - Secrets must never be committed.
 - The backend uses Python and FastAPI.
 - The frontend uses HTML, CSS, and vanilla JavaScript.
+- Step 2 has no backend connection or AI functionality.
+- Language switching uses a simple JavaScript translation object and localStorage.
 
 ## Known Issues
 - None

@@ -7,10 +7,111 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main>
-        <h1>AI Study Assistant</h1>
-        <p>This project is under development.</p>
-    </main>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-logo" aria-hidden="true">✦</span>
+                <span class="brand-name" data-i18n="appName">AI Study Assistant</span>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Main navigation" data-i18n-aria-label="mainNavigation">
+                <button class="nav-item active" type="button" aria-current="page">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                    </svg>
+                    <span data-i18n="aiChat">AI Chat</span>
+                </button>
+                <button class="nav-item" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"></path>
+                        <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"></path>
+                    </svg>
+                    <span data-i18n="explain">Explain</span>
+                </button>
+                <button class="nav-item" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M9.5 9a2.7 2.7 0 1 1 4.7 1.8c-1.2 1-2.2 1.4-2.2 3.2"></path>
+                        <path d="M12 17h.01"></path>
+                    </svg>
+                    <span data-i18n="quiz">Quiz</span>
+                </button>
+                <button class="nav-item" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                        <path d="M16 3v4M8 3v4M3 10h18"></path>
+                    </svg>
+                    <span data-i18n="studyPlan">Study Plan</span>
+                </button>
+                <button class="nav-item" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 3h9l4 4v14H6z"></path>
+                        <path d="M14 3v5h5M9 13h6M9 17h6"></path>
+                    </svg>
+                    <span data-i18n="documents">Documents</span>
+                </button>
+            </nav>
+
+            <p class="sidebar-footer" data-i18n="sidebarFooter">AI-powered personalized learning</p>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-copy">
+                    <h1 data-i18n="appName">AI Study Assistant</h1>
+                    <p data-i18n="subtitle">Learn smarter with your personal AI tutor.</p>
+                </div>
+
+                <div class="language-switcher" role="group" aria-label="Language selection" data-i18n-aria-label="languageSelection">
+                    <button class="language-button active" type="button" data-language="en" aria-pressed="true">EN</button>
+                    <span aria-hidden="true">/</span>
+                    <button class="language-button" type="button" data-language="zh" aria-pressed="false">中文</button>
+                </div>
+            </header>
+
+            <section class="chat-area" id="chatArea" aria-label="Chat messages" data-i18n-aria-label="chatMessages">
+                <div class="welcome-section" id="welcomeSection">
+                    <h2 data-i18n="welcomeTitle">How can I help you learn today?</h2>
+
+                    <div class="suggestion-grid">
+                        <article class="suggestion-card">
+                            <h3 data-i18n="explainConcept">Explain a concept</h3>
+                            <p data-i18n="explainPrompt">Explain gradient descent in simple terms</p>
+                        </article>
+                        <article class="suggestion-card">
+                            <h3 data-i18n="quizPractice">Practice with a quiz</h3>
+                            <p data-i18n="quizPrompt">Create a Python quiz for me</p>
+                        </article>
+                        <article class="suggestion-card">
+                            <h3 data-i18n="makeStudyPlan">Make a study plan</h3>
+                            <p data-i18n="studyPlanPrompt">Create a 7-day machine learning study plan</p>
+                        </article>
+                        <article class="suggestion-card">
+                            <h3 data-i18n="askNotes">Ask about my notes</h3>
+                            <p data-i18n="notesPrompt">Help me understand my study materials</p>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="message-list" id="messageList" aria-live="polite"></div>
+            </section>
+
+            <footer class="input-area">
+                <form class="chat-form" id="chatForm">
+                    <label class="visually-hidden" for="messageInput" data-i18n="inputLabel">Study question</label>
+                    <textarea
+                        id="messageInput"
+                        name="message"
+                        rows="1"
+                        placeholder="Ask anything about your studies..."
+                        data-i18n-placeholder="inputPlaceholder"
+                    ></textarea>
+                    <button class="send-button" type="submit" data-i18n="send">Send</button>
+                </form>
+                <p class="input-hint" data-i18n="inputHint">Press Enter to send · Shift + Enter for a new line</p>
+            </footer>
+        </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
