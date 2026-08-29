@@ -1,0 +1,33 @@
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python build and coverage output
+build/
+dist/
+*.egg-info/
+.coverage
+htmlcov/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
