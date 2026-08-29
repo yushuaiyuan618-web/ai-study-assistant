@@ -267,6 +267,11 @@ button {
     justify-content: flex-end;
 }
 
+.assistant-message {
+    display: flex;
+    justify-content: flex-start;
+}
+
 .message-content {
     display: grid;
     max-width: min(620px, 85%);
@@ -290,6 +295,24 @@ button {
     line-height: 1.55;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+}
+
+.assistant-message .message-content {
+    justify-items: start;
+}
+
+.assistant-message .message-bubble {
+    padding: 0 3px;
+    border-radius: 0;
+    background: transparent;
+}
+
+.loading-message .message-bubble {
+    color: var(--text-muted);
+}
+
+.error-message .message-bubble {
+    color: #8a4545;
 }
 
 .input-area {
@@ -354,6 +377,12 @@ button {
 
 .send-button:active {
     transform: scale(0.97);
+}
+
+.send-button:disabled {
+    cursor: default;
+    opacity: 0.55;
+    filter: none;
 }
 
 .input-hint {

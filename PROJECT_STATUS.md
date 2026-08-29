@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 2 frontend interface refined
+Step 3 frontend and backend connection completed
 
 ## Completed
 - Git repository initialized
@@ -14,12 +14,16 @@ Step 2 frontend interface refined
 - Frontend-only user message interaction created
 - English and Simplified Chinese interface switching added
 - Selected interface language is saved in the browser
+- Existing frontend is served through FastAPI
+- Chat and health API endpoints created
+- Frontend displays temporary bilingual backend responses
+- Loading and connection error states added
 
 ## In Progress
 - None
 
 ## Next Step
-- Review and approve Step 2 before beginning Step 3
+- Review and approve Step 3 before beginning Step 4
 
 ## Important Decisions
 - Development will be incremental.
@@ -27,8 +31,9 @@ Step 2 frontend interface refined
 - Secrets must never be committed.
 - The backend uses Python and FastAPI.
 - The frontend uses HTML, CSS, and vanilla JavaScript.
-- Step 2 has no backend connection or AI functionality.
+- Step 2 was frontend-only; Step 3 connects it to FastAPI without AI functionality.
 - Language switching uses a simple JavaScript translation object and localStorage.
+- Step 3 uses deterministic responses and does not include an AI model.
 
 ## Known Issues
 - None

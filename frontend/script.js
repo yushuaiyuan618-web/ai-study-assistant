@@ -3,6 +3,7 @@ const messageInput = document.querySelector("#messageInput");
 const messageList = document.querySelector("#messageList");
 const welcomeSection = document.querySelector("#welcomeSection");
 const chatArea = document.querySelector("#chatArea");
+const sendButton = document.querySelector(".send-button");
 const languageButtons = document.querySelectorAll("[data-language]");
 
 const translations = {
@@ -32,7 +33,9 @@ const translations = {
         inputPlaceholder: "Ask anything about your studies...",
         send: "Send",
         inputHint: "Press Enter to send · Shift + Enter for a new line",
-        you: "You"
+        you: "You",
+        thinking: "Thinking...",
+        connectionError: "Unable to connect to the server. Please make sure the backend is running."
     },
     zh: {
         pageTitle: "AI 学习助手",
@@ -60,12 +63,15 @@ const translations = {
         inputPlaceholder: "输入你的学习问题...",
         send: "发送",
         inputHint: "按 Enter 发送 · 按 Shift + Enter 换行",
-        you: "你"
+        you: "你",
+        thinking: "正在处理...",
+        connectionError: "无法连接到服务器，请确认后端已经启动。"
     }
 };
 
 const savedLanguage = localStorage.getItem("studyAssistantLanguage");
 let currentLanguage = savedLanguage === "zh" ? "zh" : "en";
+let isSending = false;
 
 function applyLanguage(language) {
     const selectedTranslations = translations[language];
@@ -101,6 +107,16 @@ function resizeMessageInput() {
     messageInput.style.overflowY = messageInput.scrollHeight > 160 ? "auto" : "hidden";
 }
 
+function scrollChatToBottom() {
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function setSendingState(sending) {
+    isSending = sending;
+    sendButton.disabled = sending;
+    chatForm.setAttribute("aria-busy", sending);
+}
+
 function displayUserMessage(message) {
     const messageRow = document.createElement("div");
     const messageContent = document.createElement("div");
@@ -119,20 +135,85 @@ function displayUserMessage(message) {
     messageRow.appendChild(messageContent);
     messageList.appendChild(messageRow);
     welcomeSection.hidden = true;
-    chatArea.scrollTop = chatArea.scrollHeight;
+    scrollChatToBottom();
 }
 
-function sendMessage() {
+function displayAssistantMessage(message, state = "", translationKey = "") {
+    const messageRow = document.createElement("div");
+    const messageContent = document.createElement("div");
+    const messageAuthor = document.createElement("span");
+    const messageBubble = document.createElement("div");
+
+    messageRow.className = `assistant-message${state ? ` ${state}-message` : ""}`;
+    messageContent.className = "message-content";
+    messageAuthor.className = "message-author";
+    messageAuthor.dataset.i18n = "appName";
+    messageAuthor.textContent = translations[currentLanguage].appName;
+    messageBubble.className = "message-bubble";
+    messageBubble.textContent = message;
+
+    if (translationKey) {
+        messageBubble.dataset.i18n = translationKey;
+    }
+
+    messageContent.append(messageAuthor, messageBubble);
+    messageRow.appendChild(messageContent);
+    messageList.appendChild(messageRow);
+    scrollChatToBottom();
+
+    return messageRow;
+}
+
+async function sendMessage() {
     const message = messageInput.value.trim();
 
-    if (!message) {
+    if (!message || isSending) {
         return;
     }
+
+    const requestLanguage = currentLanguage;
 
     displayUserMessage(message);
     messageInput.value = "";
     resizeMessageInput();
-    messageInput.focus();
+    setSendingState(true);
+
+    const loadingMessage = displayAssistantMessage(
+        translations[requestLanguage].thinking,
+        "loading",
+        "thinking"
+    );
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message,
+                language: requestLanguage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("The chat request failed.");
+        }
+
+        const data = await response.json();
+        loadingMessage.remove();
+        displayAssistantMessage(data.reply);
+    } catch {
+        loadingMessage.remove();
+        displayAssistantMessage(
+            translations[currentLanguage].connectionError,
+            "error",
+            "connectionError"
+        );
+    } finally {
+        setSendingState(false);
+        messageInput.focus();
+    }
 }
 
 chatForm.addEventListener("submit", (event) => {

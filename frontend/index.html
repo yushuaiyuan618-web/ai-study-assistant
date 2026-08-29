@@ -93,11 +93,17 @@
                     </div>
                 </div>
 
-                <div class="message-list" id="messageList" aria-live="polite"></div>
+                <div
+                    class="message-list"
+                    id="messageList"
+                    role="log"
+                    aria-live="polite"
+                    aria-relevant="additions"
+                ></div>
             </section>
 
             <footer class="input-area">
-                <form class="chat-form" id="chatForm">
+                <form class="chat-form" id="chatForm" aria-busy="false">
                     <label class="visually-hidden" for="messageInput" data-i18n="inputLabel">Study question</label>
                     <textarea
                         id="messageInput"
