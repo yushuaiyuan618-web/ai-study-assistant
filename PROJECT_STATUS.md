@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 6 Explain mode implemented
+Step 7 AI Quiz mode implemented
 
 ## Completed
 - Git repository initialized
@@ -38,12 +38,23 @@ Step 6 Explain mode implemented
 - `/api/explain` validates one-shot explanation requests separately from chat history
 - Explain mode uses the existing local Ollama and Qwen3.5 4B generation pipeline
 - Explain output uses the existing safe Markdown renderer
+- Dedicated bilingual Quiz view added with topic and Easy / Medium / Hard controls
+- Local Qwen generates exactly 5 structured multiple-choice questions with 4 options each
+- Generated quiz JSON is constrained by schema and validated with Pydantic before use
+- `/api/quiz/generate` returns questions without answer keys or explanations
+- Quiz answer keys are stored temporarily in process memory under random UUIDs
+- `/api/quiz/submit` uses deterministic Python scoring and returns per-question explanations
+- Completed quizzes are removed from temporary storage and cannot be submitted again
+- Quiz loading, incomplete-answer, expired-session, result, and New Quiz states added
+- Quiz state remains separate from Chat conversation history and Explain state
+- English Easy, Medium, Hard and Simplified Chinese quiz generation verified with Qwen3.5 4B
+- Existing multi-turn Chat and Explain endpoints passed live regression checks
 
 ## In Progress
 - None
 
 ## Next Step
-- Manually verify the Step 6 Explain interface in a browser, then review these changes before Step 7
+- Manually verify the Step 7 Quiz interface in a browser, then review these changes before Step 8
 
 ## Important Decisions
 - Development will be incremental.
@@ -66,7 +77,13 @@ Step 6 Explain mode implemented
 - Explain mode is intentionally one-shot and does not read or modify Chat conversation history.
 - Explanation style and language are enforced through backend-controlled tutor instructions.
 - Chat and Explain share the same local model configuration, retry behavior, and typed error handling.
+- Quiz generation uses Ollama's OpenAI-compatible JSON Schema response format plus Pydantic validation.
+- Quiz generation disables model thinking, uses deterministic settings, and retries malformed structured output once.
+- Quiz sessions use a small process-memory dictionary; server restarts invalidate unfinished quizzes.
+- Correct answers and explanations remain backend-only until the quiz is submitted.
+- Multiple-choice scoring is deterministic Python logic and does not make a second AI request.
 
 ## Known Issues
-- Automated browser interaction was unavailable, so Explain view switching, spacing, responsive layout, and rendered output need a brief manual visual check.
-- The first Ollama request after a cold model start can be slow; later requests complete normally after the model is loaded.
+- Automated browser interaction was unavailable, so Quiz layout, navigation, selection styling, results, and responsive behavior need a brief manual visual check.
+- Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
+- Unfinished quizzes are intentionally lost when the FastAPI process restarts.

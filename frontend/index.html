@@ -28,7 +28,7 @@
                     </svg>
                     <span data-i18n="explain">Explain</span>
                 </button>
-                <button class="nav-item" type="button">
+                <button class="nav-item" type="button" data-view="quiz">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="9"></circle>
                         <path d="M9.5 9a2.7 2.7 0 1 1 4.7 1.8c-1.2 1-2.2 1.4-2.2 3.2"></path>
@@ -160,6 +160,98 @@
 
                     <div class="explain-result" id="explainResult" aria-live="polite" hidden>
                         <div class="explain-output" id="explainOutput"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                class="quiz-view"
+                id="quizView"
+                aria-labelledby="quizViewTitle"
+                hidden
+            >
+                <div class="quiz-container">
+                    <div id="quizSetupState">
+                        <header class="quiz-header">
+                            <h2 id="quizViewTitle" data-i18n="quizViewTitle">Test Your Understanding</h2>
+                            <p data-i18n="quizViewSubtitle">Generate a short AI quiz on any topic.</p>
+                        </header>
+
+                        <form class="quiz-setup-form" id="quizSetupForm" aria-busy="false">
+                            <label class="quiz-label" for="quizTopic" data-i18n="quizTopicLabel">
+                                Topic
+                            </label>
+                            <textarea
+                                id="quizTopic"
+                                name="topic"
+                                rows="2"
+                                placeholder="Enter a topic to practice..."
+                                data-i18n-placeholder="quizTopicPlaceholder"
+                            ></textarea>
+
+                            <fieldset class="quiz-difficulty-fieldset">
+                                <legend data-i18n="quizDifficultyLabel">Difficulty</legend>
+                                <div class="quiz-difficulty-options">
+                                    <button
+                                        class="quiz-difficulty-option"
+                                        type="button"
+                                        data-quiz-difficulty="easy"
+                                        aria-pressed="false"
+                                        data-i18n="quizDifficultyEasy"
+                                    >Easy</button>
+                                    <button
+                                        class="quiz-difficulty-option active"
+                                        type="button"
+                                        data-quiz-difficulty="medium"
+                                        aria-pressed="true"
+                                        data-i18n="quizDifficultyMedium"
+                                    >Medium</button>
+                                    <button
+                                        class="quiz-difficulty-option"
+                                        type="button"
+                                        data-quiz-difficulty="hard"
+                                        aria-pressed="false"
+                                        data-i18n="quizDifficultyHard"
+                                    >Hard</button>
+                                </div>
+                            </fieldset>
+
+                            <button class="quiz-generate-button" type="submit" data-i18n="quizGenerate">
+                                Generate Quiz
+                            </button>
+                        </form>
+
+                        <p class="quiz-message" id="quizSetupMessage" aria-live="polite" hidden></p>
+                    </div>
+
+                    <div class="quiz-questions-state" id="quizQuestionsState" hidden>
+                        <header class="quiz-run-header">
+                            <h2 data-i18n="quizQuestionsTitle">Quiz</h2>
+                            <p class="quiz-meta">
+                                <span id="quizTopicDisplay"></span>
+                                <span aria-hidden="true">·</span>
+                                <span id="quizDifficultyDisplay"></span>
+                            </p>
+                        </header>
+
+                        <form id="quizAnswerForm" aria-busy="false">
+                            <div class="quiz-question-list" id="quizQuestionList"></div>
+                            <p class="quiz-message" id="quizAnswerMessage" aria-live="polite" hidden></p>
+                            <button class="quiz-submit-button" type="submit" data-i18n="quizSubmit">
+                                Submit Quiz
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="quiz-results-state" id="quizResultsState" hidden>
+                        <header class="quiz-results-header">
+                            <p data-i18n="quizScore">Score</p>
+                            <h2 id="quizScoreDisplay">0 / 5</h2>
+                        </header>
+                        <div class="quiz-result-list" id="quizResultList"></div>
+                        <button class="quiz-new-button" id="quizNewButton" type="button" data-i18n="quizNew">
+                            New Quiz
+                        </button>
                     </div>
                 </div>
             </section>

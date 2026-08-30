@@ -1,9 +1,10 @@
 from pathlib import Path
 from typing import Literal
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.ai_service import (
     AIConfigurationError,
@@ -13,12 +14,14 @@ from app.ai_service import (
     AIRequestTimeoutError,
     AIServiceError,
     generate_explanation,
+    generate_quiz,
     generate_reply,
 )
 
 
 app = FastAPI(title="AI Study Assistant")
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
+quiz_store = {}
 
 
 class ConversationMessage(BaseModel):
@@ -36,6 +39,24 @@ class ExplainRequest(BaseModel):
     topic: str
     style: Literal["simple", "detailed", "example"]
     language: Literal["en", "zh"]
+
+
+class QuizGenerateRequest(BaseModel):
+    topic: str
+    difficulty: Literal["easy", "medium", "hard"]
+    language: Literal["en", "zh"]
+
+
+class QuizSubmitRequest(BaseModel):
+    quiz_id: str
+    answers: list[int] = Field(min_length=5, max_length=5)
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answer_indexes(cls, answers):
+        if any(answer < 0 or answer > 3 for answer in answers):
+            raise ValueError("Answer indexes must be between 0 and 3.")
+        return answers
 
 
 def _ai_http_error(error):
@@ -93,6 +114,67 @@ def explain(explain_request: ExplainRequest):
         raise _ai_http_error(error) from error
 
     return {"reply": reply}
+
+
+@app.post("/api/quiz/generate")
+def generate_quiz_endpoint(quiz_request: QuizGenerateRequest):
+    topic = quiz_request.topic.strip()
+    if not topic:
+        raise HTTPException(status_code=400, detail="Topic cannot be empty.")
+
+    try:
+        quiz = generate_quiz(
+            topic,
+            quiz_request.difficulty,
+            quiz_request.language,
+        )
+    except AIServiceError as error:
+        raise _ai_http_error(error) from error
+
+    quiz_id = str(uuid4())
+    quiz_store[quiz_id] = quiz
+    questions = [
+        {
+            "id": question.id,
+            "question": question.question,
+            "options": question.options,
+        }
+        for question in quiz.questions
+    ]
+
+    return {
+        "quiz_id": quiz_id,
+        "topic": topic,
+        "difficulty": quiz_request.difficulty,
+        "questions": questions,
+    }
+
+
+@app.post("/api/quiz/submit")
+def submit_quiz(quiz_request: QuizSubmitRequest):
+    quiz = quiz_store.pop(quiz_request.quiz_id, None)
+    if quiz is None:
+        raise HTTPException(status_code=404, detail="quiz_not_found")
+
+    results = []
+    score = 0
+
+    for question, user_answer in zip(quiz.questions, quiz_request.answers):
+        is_correct = user_answer == question.correct_index
+        if is_correct:
+            score += 1
+
+        results.append(
+            {
+                "question_id": question.id,
+                "user_answer": user_answer,
+                "correct_answer": question.correct_index,
+                "correct": is_correct,
+                "explanation": question.explanation,
+            }
+        )
+
+    return {"score": score, "total": len(quiz.questions), "results": results}
 
 
 # Keep the frontend mount last so API routes are matched first.

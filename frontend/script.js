@@ -14,6 +14,24 @@ const explainStyleButtons = document.querySelectorAll("[data-explain-style]");
 const explainSubmitButton = document.querySelector(".explain-submit-button");
 const explainResult = document.querySelector("#explainResult");
 const explainOutput = document.querySelector("#explainOutput");
+const quizView = document.querySelector("#quizView");
+const quizSetupState = document.querySelector("#quizSetupState");
+const quizSetupForm = document.querySelector("#quizSetupForm");
+const quizTopic = document.querySelector("#quizTopic");
+const quizDifficultyButtons = document.querySelectorAll("[data-quiz-difficulty]");
+const quizGenerateButton = document.querySelector(".quiz-generate-button");
+const quizSetupMessage = document.querySelector("#quizSetupMessage");
+const quizQuestionsState = document.querySelector("#quizQuestionsState");
+const quizTopicDisplay = document.querySelector("#quizTopicDisplay");
+const quizDifficultyDisplay = document.querySelector("#quizDifficultyDisplay");
+const quizAnswerForm = document.querySelector("#quizAnswerForm");
+const quizQuestionList = document.querySelector("#quizQuestionList");
+const quizAnswerMessage = document.querySelector("#quizAnswerMessage");
+const quizSubmitButton = document.querySelector(".quiz-submit-button");
+const quizResultsState = document.querySelector("#quizResultsState");
+const quizScoreDisplay = document.querySelector("#quizScoreDisplay");
+const quizResultList = document.querySelector("#quizResultList");
+const quizNewButton = document.querySelector("#quizNewButton");
 
 const translations = {
     en: {
@@ -49,6 +67,32 @@ const translations = {
         explainSubmit: "Explain",
         explaining: "Explaining...",
         explainError: "Unable to generate an explanation right now. Please try again.",
+        quizViewTitle: "Test Your Understanding",
+        quizViewSubtitle: "Generate a short AI quiz on any topic.",
+        quizTopicLabel: "Topic",
+        quizTopicPlaceholder: "Enter a topic to practice...",
+        quizDifficultyLabel: "Difficulty",
+        quizDifficultyEasy: "Easy",
+        quizDifficultyMedium: "Medium",
+        quizDifficultyHard: "Hard",
+        quizGenerate: "Generate Quiz",
+        quizGenerating: "Generating quiz...",
+        quizGenerateError: "Unable to generate a quiz right now. Please try again.",
+        quizQuestionsTitle: "Quiz",
+        quizQuestion: "Question",
+        quizQuestionSuffix: "",
+        quizSubmit: "Submit Quiz",
+        quizIncomplete: "Please answer all questions before submitting.",
+        quizChecking: "Checking answers...",
+        quizSubmitError: "Unable to check your answers right now. Please try again.",
+        quizExpired: "This quiz is no longer available. Please generate a new one.",
+        quizScore: "Score",
+        quizCorrect: "Correct",
+        quizIncorrect: "Incorrect",
+        quizYourAnswer: "Your answer",
+        quizCorrectAnswer: "Correct answer",
+        quizExplanation: "Explanation",
+        quizNew: "New Quiz",
         inputLabel: "Study question",
         inputPlaceholder: "Ask anything about your studies...",
         send: "Send",
@@ -96,6 +140,32 @@ const translations = {
         explainSubmit: "开始讲解",
         explaining: "正在讲解...",
         explainError: "暂时无法生成讲解，请稍后再试。",
+        quizViewTitle: "测试你的理解",
+        quizViewSubtitle: "针对任意知识点生成一个 AI 小测验。",
+        quizTopicLabel: "知识点",
+        quizTopicPlaceholder: "输入你想练习的知识点...",
+        quizDifficultyLabel: "难度",
+        quizDifficultyEasy: "简单",
+        quizDifficultyMedium: "中等",
+        quizDifficultyHard: "困难",
+        quizGenerate: "生成测验",
+        quizGenerating: "正在生成测验...",
+        quizGenerateError: "暂时无法生成测验，请稍后再试。",
+        quizQuestionsTitle: "测验",
+        quizQuestion: "第",
+        quizQuestionSuffix: "题",
+        quizSubmit: "提交答案",
+        quizIncomplete: "请完成所有题目后再提交。",
+        quizChecking: "正在批改...",
+        quizSubmitError: "暂时无法批改答案，请稍后再试。",
+        quizExpired: "当前测验已失效，请重新生成。",
+        quizScore: "得分",
+        quizCorrect: "回答正确",
+        quizIncorrect: "回答错误",
+        quizYourAnswer: "你的答案",
+        quizCorrectAnswer: "正确答案",
+        quizExplanation: "讲解",
+        quizNew: "重新测验",
         inputLabel: "学习问题",
         inputPlaceholder: "输入你的学习问题...",
         send: "发送",
@@ -126,6 +196,10 @@ let currentLanguage = savedLanguage === "zh" ? "zh" : "en";
 let isSending = false;
 let isExplaining = false;
 let selectedExplainStyle = "simple";
+let isGeneratingQuiz = false;
+let isSubmittingQuiz = false;
+let selectedQuizDifficulty = "medium";
+let currentQuiz = null;
 const conversationHistory = [];
 
 function applyLanguage(language) {
@@ -153,7 +227,28 @@ function applyLanguage(language) {
         button.setAttribute("aria-pressed", isActive);
     });
 
+    updateQuizLocalizedText();
+
     localStorage.setItem("studyAssistantLanguage", language);
+}
+
+function formatQuizQuestionNumber(number) {
+    const prefix = translations[currentLanguage].quizQuestion;
+    const suffix = translations[currentLanguage].quizQuestionSuffix;
+    return `${prefix} ${number}${suffix ? ` ${suffix}` : ""}`;
+}
+
+function updateQuizLocalizedText() {
+    document.querySelectorAll("[data-quiz-question-number]").forEach((element) => {
+        element.textContent = formatQuizQuestionNumber(element.dataset.quizQuestionNumber);
+    });
+
+    if (currentQuiz) {
+        const difficultyKey = `quizDifficulty${
+            currentQuiz.difficulty[0].toUpperCase() + currentQuiz.difficulty.slice(1)
+        }`;
+        quizDifficultyDisplay.textContent = translations[currentLanguage][difficultyKey];
+    }
 }
 
 function resizeMessageInput() {
@@ -174,10 +269,13 @@ function setSendingState(sending) {
 
 function setActiveView(view) {
     const isChatView = view === "chat";
+    const isExplainView = view === "explain";
+    const isQuizView = view === "quiz";
 
     chatArea.hidden = !isChatView;
     chatInputArea.hidden = !isChatView;
-    explainView.hidden = isChatView;
+    explainView.hidden = !isExplainView;
+    quizView.hidden = !isQuizView;
 
     viewButtons.forEach((button) => {
         const isActive = button.dataset.view === view;
@@ -192,8 +290,10 @@ function setActiveView(view) {
 
     if (isChatView) {
         messageInput.focus();
-    } else {
+    } else if (isExplainView) {
         explainTopic.focus();
+    } else if (isQuizView && !currentQuiz) {
+        quizTopic.focus();
     }
 }
 
@@ -590,6 +690,310 @@ async function requestExplanation() {
     }
 }
 
+function selectQuizDifficulty(difficulty) {
+    selectedQuizDifficulty = difficulty;
+
+    quizDifficultyButtons.forEach((button) => {
+        const isActive = button.dataset.quizDifficulty === difficulty;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive);
+    });
+}
+
+function showQuizMessage(element, translationKey, state = "") {
+    element.hidden = false;
+    element.className = `quiz-message${state ? ` ${state}` : ""}`;
+    element.dataset.i18n = translationKey;
+    element.textContent = translations[currentLanguage][translationKey];
+}
+
+function clearQuizMessage(element) {
+    element.hidden = true;
+    element.className = "quiz-message";
+    element.textContent = "";
+    delete element.dataset.i18n;
+}
+
+function setQuizGeneratingState(generating) {
+    isGeneratingQuiz = generating;
+    quizTopic.disabled = generating;
+    quizGenerateButton.disabled = generating;
+    quizSetupForm.setAttribute("aria-busy", generating);
+
+    quizDifficultyButtons.forEach((button) => {
+        button.disabled = generating;
+    });
+
+    const translationKey = generating ? "quizGenerating" : "quizGenerate";
+    quizGenerateButton.dataset.i18n = translationKey;
+    quizGenerateButton.textContent = translations[currentLanguage][translationKey];
+}
+
+function setQuizSubmittingState(submitting) {
+    isSubmittingQuiz = submitting;
+    quizSubmitButton.disabled = submitting;
+    quizAnswerForm.setAttribute("aria-busy", submitting);
+    quizQuestionList.querySelectorAll("input[type='radio']").forEach((input) => {
+        input.disabled = submitting;
+    });
+
+    const translationKey = submitting ? "quizChecking" : "quizSubmit";
+    quizSubmitButton.dataset.i18n = translationKey;
+    quizSubmitButton.textContent = translations[currentLanguage][translationKey];
+}
+
+function renderQuizQuestions() {
+    quizQuestionList.textContent = "";
+    quizTopicDisplay.textContent = currentQuiz.topic;
+    updateQuizLocalizedText();
+
+    currentQuiz.questions.forEach((question, questionIndex) => {
+        const questionCard = document.createElement("article");
+        const questionNumber = document.createElement("h3");
+        const questionText = document.createElement("p");
+        const optionGroup = document.createElement("fieldset");
+        const optionLegend = document.createElement("legend");
+
+        questionCard.className = "quiz-question";
+        questionNumber.dataset.quizQuestionNumber = questionIndex + 1;
+        questionNumber.textContent = formatQuizQuestionNumber(questionIndex + 1);
+        questionText.className = "quiz-question-text";
+        questionText.textContent = question.question;
+        optionGroup.className = "quiz-option-group";
+        optionLegend.className = "visually-hidden";
+        optionLegend.textContent = question.question;
+        optionGroup.appendChild(optionLegend);
+
+        question.options.forEach((option, optionIndex) => {
+            const optionLabel = document.createElement("label");
+            const optionInput = document.createElement("input");
+            const optionText = document.createElement("span");
+
+            optionLabel.className = "quiz-option";
+            optionInput.type = "radio";
+            optionInput.name = `quiz-question-${questionIndex}`;
+            optionInput.value = optionIndex;
+            optionText.textContent = option;
+
+            optionInput.addEventListener("change", () => {
+                optionGroup.querySelectorAll(".quiz-option").forEach((label) => {
+                    label.classList.remove("selected");
+                });
+                optionLabel.classList.add("selected");
+                clearQuizMessage(quizAnswerMessage);
+            });
+
+            optionLabel.append(optionInput, optionText);
+            optionGroup.appendChild(optionLabel);
+        });
+
+        questionCard.append(questionNumber, questionText, optionGroup);
+        quizQuestionList.appendChild(questionCard);
+    });
+
+    quizSetupState.hidden = true;
+    quizResultsState.hidden = true;
+    quizQuestionsState.hidden = false;
+    clearQuizMessage(quizAnswerMessage);
+}
+
+async function generateQuizRequest() {
+    const topic = quizTopic.value.trim();
+
+    if (!topic || isGeneratingQuiz) {
+        quizTopic.focus();
+        return;
+    }
+
+    const requestLanguage = currentLanguage;
+    const requestDifficulty = selectedQuizDifficulty;
+    setQuizGeneratingState(true);
+    showQuizMessage(quizSetupMessage, "quizGenerating", "loading");
+
+    try {
+        const response = await fetch("/api/quiz/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                topic,
+                difficulty: requestDifficulty,
+                language: requestLanguage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("The quiz generation request failed.");
+        }
+
+        const data = await response.json();
+        const hasValidShape =
+            data.quiz_id &&
+            data.questions?.length === 5 &&
+            data.questions.every((question) => question.options?.length === 4);
+
+        if (!hasValidShape) {
+            throw new Error("The quiz response was incomplete.");
+        }
+
+        currentQuiz = data;
+        clearQuizMessage(quizSetupMessage);
+        renderQuizQuestions();
+    } catch {
+        showQuizMessage(quizSetupMessage, "quizGenerateError", "error");
+    } finally {
+        setQuizGeneratingState(false);
+        if (!currentQuiz) {
+            quizTopic.focus();
+        }
+    }
+}
+
+function getSelectedQuizAnswers() {
+    if (!currentQuiz) {
+        return null;
+    }
+
+    const answers = currentQuiz.questions.map((question, questionIndex) => {
+        const selectedOption = quizQuestionList.querySelector(
+            `input[name='quiz-question-${questionIndex}']:checked`
+        );
+        return selectedOption ? Number(selectedOption.value) : null;
+    });
+
+    return answers.includes(null) ? null : answers;
+}
+
+function appendResultDetail(container, labelKey, value) {
+    const detail = document.createElement("p");
+    const label = document.createElement("strong");
+    const text = document.createTextNode(`: ${value}`);
+
+    label.dataset.i18n = labelKey;
+    label.textContent = translations[currentLanguage][labelKey];
+    detail.append(label, text);
+    container.appendChild(detail);
+}
+
+function renderQuizResults(resultData) {
+    quizResultList.textContent = "";
+    quizScoreDisplay.textContent = `${resultData.score} / ${resultData.total}`;
+
+    resultData.results.forEach((result, resultIndex) => {
+        const question = currentQuiz.questions.find(
+            (quizQuestion) => quizQuestion.id === result.question_id
+        );
+        const resultCard = document.createElement("article");
+        const resultHeader = document.createElement("div");
+        const questionNumber = document.createElement("h3");
+        const status = document.createElement("span");
+        const questionText = document.createElement("p");
+
+        resultCard.className = `quiz-result ${result.correct ? "correct" : "incorrect"}`;
+        resultHeader.className = "quiz-result-heading";
+        questionNumber.dataset.quizQuestionNumber = resultIndex + 1;
+        questionNumber.textContent = formatQuizQuestionNumber(resultIndex + 1);
+        status.className = "quiz-result-status";
+        status.dataset.i18n = result.correct ? "quizCorrect" : "quizIncorrect";
+        status.textContent = translations[currentLanguage][status.dataset.i18n];
+        questionText.className = "quiz-result-question";
+        questionText.textContent = question.question;
+
+        resultHeader.append(questionNumber, status);
+        resultCard.append(resultHeader, questionText);
+        appendResultDetail(
+            resultCard,
+            "quizYourAnswer",
+            question.options[result.user_answer]
+        );
+        appendResultDetail(
+            resultCard,
+            "quizCorrectAnswer",
+            question.options[result.correct_answer]
+        );
+        appendResultDetail(resultCard, "quizExplanation", result.explanation);
+        quizResultList.appendChild(resultCard);
+    });
+
+    quizQuestionsState.hidden = true;
+    quizResultsState.hidden = false;
+}
+
+function returnToQuizSetup(messageKey = "", state = "") {
+    currentQuiz = null;
+    quizQuestionsState.hidden = true;
+    quizResultsState.hidden = true;
+    quizSetupState.hidden = false;
+    quizQuestionList.textContent = "";
+    quizResultList.textContent = "";
+    clearQuizMessage(quizAnswerMessage);
+
+    if (messageKey) {
+        showQuizMessage(quizSetupMessage, messageKey, state);
+    } else {
+        clearQuizMessage(quizSetupMessage);
+    }
+}
+
+function resetQuiz() {
+    quizTopic.value = "";
+    selectQuizDifficulty("medium");
+    returnToQuizSetup();
+    quizTopic.focus();
+}
+
+async function submitQuizAnswers() {
+    if (!currentQuiz || isSubmittingQuiz) {
+        return;
+    }
+
+    const answers = getSelectedQuizAnswers();
+    if (!answers) {
+        showQuizMessage(quizAnswerMessage, "quizIncomplete", "error");
+        return;
+    }
+
+    setQuizSubmittingState(true);
+    showQuizMessage(quizAnswerMessage, "quizChecking", "loading");
+
+    try {
+        const response = await fetch("/api/quiz/submit", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                quiz_id: currentQuiz.quiz_id,
+                answers
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const error = new Error("The quiz submission request failed.");
+            error.code = errorData.detail;
+            throw error;
+        }
+
+        const data = await response.json();
+        if (data.results?.length !== 5 || data.total !== 5) {
+            throw new Error("The quiz result response was incomplete.");
+        }
+
+        clearQuizMessage(quizAnswerMessage);
+        renderQuizResults(data);
+    } catch (error) {
+        if (error.code === "quiz_not_found") {
+            returnToQuizSetup("quizExpired", "error");
+        } else {
+            showQuizMessage(quizAnswerMessage, "quizSubmitError", "error");
+        }
+    } finally {
+        setQuizSubmittingState(false);
+    }
+}
+
 chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
     sendMessage();
@@ -599,6 +1003,18 @@ explainForm.addEventListener("submit", (event) => {
     event.preventDefault();
     requestExplanation();
 });
+
+quizSetupForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    generateQuizRequest();
+});
+
+quizAnswerForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitQuizAnswers();
+});
+
+quizNewButton.addEventListener("click", resetQuiz);
 
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -624,6 +1040,12 @@ viewButtons.forEach((button) => {
 explainStyleButtons.forEach((button) => {
     button.addEventListener("click", () => {
         selectExplainStyle(button.dataset.explainStyle);
+    });
+});
+
+quizDifficultyButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        selectQuizDifficulty(button.dataset.quizDifficulty);
     });
 });
 
