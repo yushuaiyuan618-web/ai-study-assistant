@@ -3,8 +3,17 @@ const messageInput = document.querySelector("#messageInput");
 const messageList = document.querySelector("#messageList");
 const welcomeSection = document.querySelector("#welcomeSection");
 const chatArea = document.querySelector("#chatArea");
+const chatInputArea = document.querySelector("#chatInputArea");
 const sendButton = document.querySelector(".send-button");
 const languageButtons = document.querySelectorAll("[data-language]");
+const viewButtons = document.querySelectorAll("[data-view]");
+const explainView = document.querySelector("#explainView");
+const explainForm = document.querySelector("#explainForm");
+const explainTopic = document.querySelector("#explainTopic");
+const explainStyleButtons = document.querySelectorAll("[data-explain-style]");
+const explainSubmitButton = document.querySelector(".explain-submit-button");
+const explainResult = document.querySelector("#explainResult");
+const explainOutput = document.querySelector("#explainOutput");
 
 const translations = {
     en: {
@@ -29,6 +38,17 @@ const translations = {
         studyPlanPrompt: "Create a 7-day machine learning study plan",
         askNotes: "Ask about my notes",
         notesPrompt: "Help me understand my study materials",
+        explainViewTitle: "Explain a Concept",
+        explainViewSubtitle: "Turn difficult ideas into clear explanations.",
+        explainTopicLabel: "Topic or question",
+        explainTopicPlaceholder: "Enter a concept, topic, or question...",
+        explainStyleLabel: "Explanation style",
+        explainStyleSimple: "Simple",
+        explainStyleDetailed: "Detailed",
+        explainStyleExample: "With Example",
+        explainSubmit: "Explain",
+        explaining: "Explaining...",
+        explainError: "Unable to generate an explanation right now. Please try again.",
         inputLabel: "Study question",
         inputPlaceholder: "Ask anything about your studies...",
         send: "Send",
@@ -65,6 +85,17 @@ const translations = {
         studyPlanPrompt: "制定一个 7 天机器学习计划",
         askNotes: "询问学习资料",
         notesPrompt: "帮我理解我的学习资料",
+        explainViewTitle: "知识讲解",
+        explainViewSubtitle: "把复杂的知识变得简单易懂。",
+        explainTopicLabel: "知识点或问题",
+        explainTopicPlaceholder: "输入你想理解的知识点或问题...",
+        explainStyleLabel: "讲解方式",
+        explainStyleSimple: "简单讲解",
+        explainStyleDetailed: "详细讲解",
+        explainStyleExample: "举例讲解",
+        explainSubmit: "开始讲解",
+        explaining: "正在讲解...",
+        explainError: "暂时无法生成讲解，请稍后再试。",
         inputLabel: "学习问题",
         inputPlaceholder: "输入你的学习问题...",
         send: "发送",
@@ -93,6 +124,8 @@ const errorTranslationKeyByCode = {
 const savedLanguage = localStorage.getItem("studyAssistantLanguage");
 let currentLanguage = savedLanguage === "zh" ? "zh" : "en";
 let isSending = false;
+let isExplaining = false;
+let selectedExplainStyle = "simple";
 const conversationHistory = [];
 
 function applyLanguage(language) {
@@ -137,6 +170,66 @@ function setSendingState(sending) {
     isSending = sending;
     sendButton.disabled = sending;
     chatForm.setAttribute("aria-busy", sending);
+}
+
+function setActiveView(view) {
+    const isChatView = view === "chat";
+
+    chatArea.hidden = !isChatView;
+    chatInputArea.hidden = !isChatView;
+    explainView.hidden = isChatView;
+
+    viewButtons.forEach((button) => {
+        const isActive = button.dataset.view === view;
+        button.classList.toggle("active", isActive);
+
+        if (isActive) {
+            button.setAttribute("aria-current", "page");
+        } else {
+            button.removeAttribute("aria-current");
+        }
+    });
+
+    if (isChatView) {
+        messageInput.focus();
+    } else {
+        explainTopic.focus();
+    }
+}
+
+function selectExplainStyle(style) {
+    selectedExplainStyle = style;
+
+    explainStyleButtons.forEach((button) => {
+        const isActive = button.dataset.explainStyle === style;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive);
+    });
+}
+
+function setExplainingState(explaining) {
+    isExplaining = explaining;
+    explainTopic.disabled = explaining;
+    explainSubmitButton.disabled = explaining;
+    explainForm.setAttribute("aria-busy", explaining);
+
+    explainStyleButtons.forEach((button) => {
+        button.disabled = explaining;
+    });
+}
+
+function displayExplainOutput(message, state = "", translationKey = "") {
+    explainResult.hidden = false;
+    explainOutput.className = `explain-output${state ? ` ${state}` : ""}`;
+    explainOutput.textContent = message;
+
+    if (translationKey) {
+        explainOutput.dataset.i18n = translationKey;
+    } else {
+        delete explainOutput.dataset.i18n;
+        explainOutput.classList.add("markdown-content");
+        renderMarkdown(explainOutput, message);
+    }
 }
 
 function appendInlineMarkdown(container, text) {
@@ -375,6 +468,7 @@ function displayAssistantMessage(message, state = "", translationKey = "") {
         messageBubble.textContent = message;
         messageBubble.dataset.i18n = translationKey;
     } else {
+        messageBubble.classList.add("markdown-content");
         renderMarkdown(messageBubble, message);
     }
 
@@ -447,9 +541,63 @@ async function sendMessage() {
     }
 }
 
+async function requestExplanation() {
+    const topic = explainTopic.value.trim();
+
+    if (!topic || isExplaining) {
+        explainTopic.focus();
+        return;
+    }
+
+    const requestLanguage = currentLanguage;
+    const requestStyle = selectedExplainStyle;
+
+    setExplainingState(true);
+    displayExplainOutput(
+        translations[requestLanguage].explaining,
+        "loading",
+        "explaining"
+    );
+
+    try {
+        const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                topic,
+                style: requestStyle,
+                language: requestLanguage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("The explanation request failed.");
+        }
+
+        const data = await response.json();
+        displayExplainOutput(data.reply);
+    } catch {
+        displayExplainOutput(
+            translations[currentLanguage].explainError,
+            "error",
+            "explainError"
+        );
+    } finally {
+        setExplainingState(false);
+        explainTopic.focus();
+    }
+}
+
 chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
     sendMessage();
+});
+
+explainForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    requestExplanation();
 });
 
 messageInput.addEventListener("keydown", (event) => {
@@ -464,6 +612,18 @@ messageInput.addEventListener("input", resizeMessageInput);
 languageButtons.forEach((button) => {
     button.addEventListener("click", () => {
         applyLanguage(button.dataset.language);
+    });
+});
+
+viewButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        setActiveView(button.dataset.view);
+    });
+});
+
+explainStyleButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        selectExplainStyle(button.dataset.explainStyle);
     });
 });
 

@@ -12,6 +12,10 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 body {
     margin: 0;
     min-width: 320px;
@@ -187,7 +191,9 @@ button {
 
 .language-button:focus-visible,
 .nav-item:focus-visible,
-.send-button:focus-visible {
+.send-button:focus-visible,
+.explain-style-option:focus-visible,
+.explain-submit-button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
@@ -308,51 +314,55 @@ button {
     white-space: normal;
 }
 
-.assistant-message .message-bubble > :first-child {
+.markdown-content {
+    white-space: normal;
+}
+
+.markdown-content > :first-child {
     margin-top: 0;
 }
 
-.assistant-message .message-bubble > :last-child {
+.markdown-content > :last-child {
     margin-bottom: 0;
 }
 
-.assistant-message .message-bubble p,
-.assistant-message .message-bubble ul,
-.assistant-message .message-bubble ol,
-.assistant-message .message-bubble pre,
-.assistant-message .message-bubble .markdown-table-wrapper {
+.markdown-content p,
+.markdown-content ul,
+.markdown-content ol,
+.markdown-content pre,
+.markdown-content .markdown-table-wrapper {
     margin: 0 0 12px;
 }
 
-.assistant-message .message-bubble h1,
-.assistant-message .message-bubble h2,
-.assistant-message .message-bubble h3,
-.assistant-message .message-bubble h4,
-.assistant-message .message-bubble h5,
-.assistant-message .message-bubble h6 {
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
     margin: 18px 0 8px;
     font-size: 1.05rem;
     line-height: 1.35;
 }
 
-.assistant-message .message-bubble h1 {
+.markdown-content h1 {
     font-size: 1.2rem;
 }
 
-.assistant-message .message-bubble h2 {
+.markdown-content h2 {
     font-size: 1.12rem;
 }
 
-.assistant-message .message-bubble ul,
-.assistant-message .message-bubble ol {
+.markdown-content ul,
+.markdown-content ol {
     padding-left: 24px;
 }
 
-.assistant-message .message-bubble li + li {
+.markdown-content li + li {
     margin-top: 4px;
 }
 
-.assistant-message .message-bubble code {
+.markdown-content code {
     padding: 2px 5px;
     border-radius: 5px;
     background: var(--surface-muted);
@@ -360,7 +370,7 @@ button {
     font-size: 0.9em;
 }
 
-.assistant-message .message-bubble pre {
+.markdown-content pre {
     max-width: 100%;
     padding: 13px 15px;
     overflow-x: auto;
@@ -371,7 +381,7 @@ button {
     white-space: pre;
 }
 
-.assistant-message .message-bubble pre code {
+.markdown-content pre code {
     padding: 0;
     background: transparent;
     font-size: 12px;
@@ -382,21 +392,21 @@ button {
     overflow-x: auto;
 }
 
-.assistant-message .message-bubble table {
+.markdown-content table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
 }
 
-.assistant-message .message-bubble th,
-.assistant-message .message-bubble td {
+.markdown-content th,
+.markdown-content td {
     padding: 8px 10px;
     border: 1px solid var(--border);
     text-align: left;
     vertical-align: top;
 }
 
-.assistant-message .message-bubble th {
+.markdown-content th {
     background: var(--surface-muted);
     font-weight: 650;
 }
@@ -406,6 +416,156 @@ button {
 }
 
 .error-message .message-bubble {
+    color: #8a4545;
+}
+
+.explain-view {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.explain-container {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    padding: 52px 40px;
+}
+
+.explain-header {
+    margin-bottom: 32px;
+}
+
+.explain-header h2 {
+    margin: 0 0 8px;
+    font-size: clamp(24px, 3vw, 30px);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+}
+
+.explain-header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.explain-form {
+    display: grid;
+    gap: 14px;
+}
+
+.explain-label,
+.explain-style-fieldset legend {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.explain-form textarea {
+    width: 100%;
+    min-height: 116px;
+    padding: 14px 15px;
+    resize: vertical;
+    border: 1px solid #dcdce0;
+    border-radius: 11px;
+    outline: 0;
+    color: var(--text);
+    background: var(--surface);
+    line-height: 1.55;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.explain-form textarea:focus {
+    border-color: #b9b9bf;
+    box-shadow: 0 1px 4px rgba(25, 25, 28, 0.08);
+}
+
+.explain-form textarea::placeholder {
+    color: #999ca8;
+}
+
+.explain-style-fieldset {
+    min-width: 0;
+    margin: 8px 0 2px;
+    padding: 0;
+    border: 0;
+}
+
+.explain-style-fieldset legend {
+    margin-bottom: 10px;
+}
+
+.explain-style-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.explain-style-option {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    background: var(--surface);
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.explain-style-option:hover {
+    color: var(--text);
+    border-color: #d2d2d7;
+}
+
+.explain-style-option.active {
+    color: var(--accent);
+    border-color: #cbc8df;
+    background: #f6f5fa;
+    font-weight: 600;
+}
+
+.explain-submit-button {
+    width: fit-content;
+    margin-top: 6px;
+    padding: 10px 17px;
+    border: 0;
+    border-radius: 9px;
+    color: #ffffff;
+    background: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.explain-submit-button:hover {
+    filter: brightness(0.9);
+}
+
+.explain-submit-button:disabled {
+    cursor: default;
+    opacity: 0.55;
+    filter: none;
+}
+
+.explain-result {
+    margin-top: 34px;
+    padding-top: 26px;
+    border-top: 1px solid var(--border);
+}
+
+.explain-output {
+    color: var(--text);
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.explain-output.loading {
+    color: var(--text-muted);
+}
+
+.explain-output.error {
     color: #8a4545;
 }
 
@@ -522,6 +682,10 @@ button {
         padding: 36px 20px;
     }
 
+    .explain-container {
+        padding: 36px 20px;
+    }
+
     .input-area {
         padding: 12px 14px 14px;
     }
@@ -549,5 +713,14 @@ button {
 
     .input-hint {
         display: none;
+    }
+
+    .explain-style-options {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .explain-style-option {
+        text-align: left;
     }
 }

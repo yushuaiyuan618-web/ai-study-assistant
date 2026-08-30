@@ -15,13 +15,13 @@
             </div>
 
             <nav class="sidebar-nav" aria-label="Main navigation" data-i18n-aria-label="mainNavigation">
-                <button class="nav-item active" type="button" aria-current="page">
+                <button class="nav-item active" type="button" data-view="chat" aria-current="page">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
                     </svg>
                     <span data-i18n="aiChat">AI Chat</span>
                 </button>
-                <button class="nav-item" type="button">
+                <button class="nav-item" type="button" data-view="explain">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"></path>
                         <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"></path>
@@ -102,7 +102,69 @@
                 ></div>
             </section>
 
-            <footer class="input-area">
+            <section
+                class="explain-view"
+                id="explainView"
+                aria-labelledby="explainViewTitle"
+                hidden
+            >
+                <div class="explain-container">
+                    <header class="explain-header">
+                        <h2 id="explainViewTitle" data-i18n="explainViewTitle">Explain a Concept</h2>
+                        <p data-i18n="explainViewSubtitle">Turn difficult ideas into clear explanations.</p>
+                    </header>
+
+                    <form class="explain-form" id="explainForm" aria-busy="false">
+                        <label class="explain-label" for="explainTopic" data-i18n="explainTopicLabel">
+                            Topic or question
+                        </label>
+                        <textarea
+                            id="explainTopic"
+                            name="topic"
+                            rows="3"
+                            placeholder="Enter a concept, topic, or question..."
+                            data-i18n-placeholder="explainTopicPlaceholder"
+                        ></textarea>
+
+                        <fieldset class="explain-style-fieldset">
+                            <legend data-i18n="explainStyleLabel">Explanation style</legend>
+                            <div class="explain-style-options">
+                                <button
+                                    class="explain-style-option active"
+                                    type="button"
+                                    data-explain-style="simple"
+                                    aria-pressed="true"
+                                    data-i18n="explainStyleSimple"
+                                >Simple</button>
+                                <button
+                                    class="explain-style-option"
+                                    type="button"
+                                    data-explain-style="detailed"
+                                    aria-pressed="false"
+                                    data-i18n="explainStyleDetailed"
+                                >Detailed</button>
+                                <button
+                                    class="explain-style-option"
+                                    type="button"
+                                    data-explain-style="example"
+                                    aria-pressed="false"
+                                    data-i18n="explainStyleExample"
+                                >With Example</button>
+                            </div>
+                        </fieldset>
+
+                        <button class="explain-submit-button" type="submit" data-i18n="explainSubmit">
+                            Explain
+                        </button>
+                    </form>
+
+                    <div class="explain-result" id="explainResult" aria-live="polite" hidden>
+                        <div class="explain-output" id="explainOutput"></div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="input-area" id="chatInputArea">
                 <form class="chat-form" id="chatForm" aria-busy="false">
                     <label class="visually-hidden" for="messageInput" data-i18n="inputLabel">Study question</label>
                     <textarea

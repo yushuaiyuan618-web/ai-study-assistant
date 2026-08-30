@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-AI response quality and reliability improvements implemented
+Step 6 Explain mode implemented
 
 ## Completed
 - Git repository initialized
@@ -32,12 +32,18 @@ AI response quality and reliability improvements implemented
 - Empty Ollama responses retry once without duplicating the user message
 - Ollama connection, model, timeout, empty-response, and generation errors are distinguished
 - Assistant Markdown is rendered safely without a frontend dependency
+- Dedicated Explain view added without replacing the existing Chat view
+- Explain requests support Simple, Detailed, and With Example teaching styles
+- English and Simplified Chinese Explain UI, loading, output, and error states added
+- `/api/explain` validates one-shot explanation requests separately from chat history
+- Explain mode uses the existing local Ollama and Qwen3.5 4B generation pipeline
+- Explain output uses the existing safe Markdown renderer
 
 ## In Progress
 - None
 
 ## Next Step
-- Manually inspect Markdown layout in the browser, then review these changes
+- Manually verify the Step 6 Explain interface in a browser, then review these changes before Step 7
 
 ## Important Decisions
 - Development will be incremental.
@@ -57,7 +63,10 @@ AI response quality and reliability improvements implemented
 - Conversation history is not stored in a database, server session, or browser storage.
 - The backend retries only empty model output and reuses the same non-duplicated model input.
 - Frontend Markdown rendering uses DOM text nodes instead of injecting model-generated HTML.
+- Explain mode is intentionally one-shot and does not read or modify Chat conversation history.
+- Explanation style and language are enforced through backend-controlled tutor instructions.
+- Chat and Explain share the same local model configuration, retry behavior, and typed error handling.
 
 ## Known Issues
-- Automated browser interaction was unavailable, so the rendered Markdown spacing and table overflow still need a brief manual visual check.
-- The first Ollama request after a cold model start can be slow; one cold test reached the existing friendly unavailable response before later live tests succeeded.
+- Automated browser interaction was unavailable, so Explain view switching, spacing, responsive layout, and rendered output need a brief manual visual check.
+- The first Ollama request after a cold model start can be slow; later requests complete normally after the model is loaded.
