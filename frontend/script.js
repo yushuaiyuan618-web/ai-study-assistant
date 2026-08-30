@@ -652,22 +652,109 @@ function displayExplainOutput(message, state = "", translationKey = "") {
     }
 }
 
+function appendMath(container, expression, displayMode = false) {
+    const mathElement = document.createElement(displayMode ? "div" : "span");
+    mathElement.className = displayMode
+        ? "math-expression math-display"
+        : "math-expression math-inline";
+
+    try {
+        if (!window.katex?.render) {
+            throw new Error("KaTeX is unavailable.");
+        }
+
+        window.katex.render(expression, mathElement, {
+            displayMode,
+            throwOnError: true,
+            trust: false,
+            strict: "warn",
+            maxSize: 10,
+            maxExpand: 1000,
+            output: "htmlAndMathml"
+        });
+    } catch {
+        mathElement.classList.add("math-render-error");
+        mathElement.textContent = expression;
+    }
+
+    container.appendChild(mathElement);
+}
+
 function appendInlineMarkdown(container, text) {
-    const tokenPattern = /(`[^`\n]+`|\*\*[^*\n]+?\*\*)/g;
+    const tokenPattern = /(`[^`\n]+`|\*\*[^*\n]+?\*\*|\\\((?:\\.|[^\\\n])*?\\\)|\$(?!\$)(?:\\.|[^$\\\n])+\$)/g;
     let lastIndex = 0;
 
     for (const match of text.matchAll(tokenPattern)) {
         container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
 
         const token = match[0];
-        const element = document.createElement(token.startsWith("`") ? "code" : "strong");
-        const markerLength = token.startsWith("`") ? 1 : 2;
-        element.textContent = token.slice(markerLength, -markerLength);
-        container.appendChild(element);
+        if (token.startsWith("`")) {
+            const code = document.createElement("code");
+            code.textContent = token.slice(1, -1);
+            container.appendChild(code);
+        } else if (token.startsWith("**")) {
+            const strong = document.createElement("strong");
+            appendInlineMarkdown(strong, token.slice(2, -2));
+            container.appendChild(strong);
+        } else {
+            const usesParentheses = token.startsWith("\\(");
+            const markerLength = usesParentheses ? 2 : 1;
+            appendMath(container, token.slice(markerLength, -markerLength));
+        }
+
         lastIndex = match.index + token.length;
     }
 
     container.appendChild(document.createTextNode(text.slice(lastIndex)));
+}
+
+function readMathBlock(lines, startIndex) {
+    const trimmedLine = lines[startIndex].trim();
+    const usesBrackets = trimmedLine.startsWith("\\[");
+    const openingDelimiter = usesBrackets ? "\\[" : "$$";
+    const closingDelimiter = usesBrackets ? "\\]" : "$$";
+
+    if (!trimmedLine.startsWith(openingDelimiter)) {
+        return null;
+    }
+
+    const expressionLines = [];
+    const firstLine = trimmedLine.slice(openingDelimiter.length);
+    const sameLineClosingIndex = firstLine.lastIndexOf(closingDelimiter);
+
+    if (
+        sameLineClosingIndex >= 0 &&
+        !firstLine.slice(sameLineClosingIndex + closingDelimiter.length).trim()
+    ) {
+        return {
+            expression: firstLine.slice(0, sameLineClosingIndex).trim(),
+            nextIndex: startIndex + 1
+        };
+    }
+
+    if (firstLine) {
+        expressionLines.push(firstLine);
+    }
+
+    for (let index = startIndex + 1; index < lines.length; index += 1) {
+        const currentLine = lines[index];
+        const closingIndex = currentLine.lastIndexOf(closingDelimiter);
+
+        if (
+            closingIndex >= 0 &&
+            !currentLine.slice(closingIndex + closingDelimiter.length).trim()
+        ) {
+            expressionLines.push(currentLine.slice(0, closingIndex));
+            return {
+                expression: expressionLines.join("\n").trim(),
+                nextIndex: index + 1
+            };
+        }
+
+        expressionLines.push(currentLine);
+    }
+
+    return null;
 }
 
 function splitTableRow(line) {
@@ -690,9 +777,12 @@ function isTableSeparator(line) {
 
 function isMarkdownBlockStart(lines, index) {
     const line = lines[index];
+    const trimmedLine = line.trim();
 
     return (
-        /^```/.test(line.trim()) ||
+        /^```/.test(trimmedLine) ||
+        trimmedLine.startsWith("$$") ||
+        trimmedLine.startsWith("\\[") ||
         /^#{1,6}\s+/.test(line) ||
         /^\s*[-*+]\s+/.test(line) ||
         /^\s*\d+\.\s+/.test(line) ||
@@ -736,6 +826,22 @@ function renderMarkdown(container, markdown) {
             }
             preformatted.appendChild(code);
             container.appendChild(preformatted);
+            continue;
+        }
+
+        if (line.trim().startsWith("$$") || line.trim().startsWith("\\[")) {
+            const mathBlock = readMathBlock(lines, index);
+
+            if (mathBlock?.expression) {
+                appendMath(container, mathBlock.expression, true);
+                index = mathBlock.nextIndex;
+            } else {
+                const paragraph = document.createElement("p");
+                paragraph.textContent = line;
+                container.appendChild(paragraph);
+                index += 1;
+            }
+
             continue;
         }
 
@@ -1075,15 +1181,15 @@ function renderQuizQuestions() {
     currentQuiz.questions.forEach((question, questionIndex) => {
         const questionCard = document.createElement("article");
         const questionNumber = document.createElement("h3");
-        const questionText = document.createElement("p");
+        const questionText = document.createElement("div");
         const optionGroup = document.createElement("fieldset");
         const optionLegend = document.createElement("legend");
 
         questionCard.className = "quiz-question";
         questionNumber.dataset.quizQuestionNumber = questionIndex + 1;
         questionNumber.textContent = formatQuizQuestionNumber(questionIndex + 1);
-        questionText.className = "quiz-question-text";
-        questionText.textContent = question.question;
+        questionText.className = "quiz-question-text markdown-content";
+        renderMarkdown(questionText, question.question);
         optionGroup.className = "quiz-option-group";
         optionLegend.className = "visually-hidden";
         optionLegend.textContent = question.question;
@@ -1098,7 +1204,7 @@ function renderQuizQuestions() {
             optionInput.type = "radio";
             optionInput.name = `quiz-question-${questionIndex}`;
             optionInput.value = optionIndex;
-            optionText.textContent = option;
+            appendInlineMarkdown(optionText, option);
 
             optionInput.addEventListener("change", () => {
                 optionGroup.querySelectorAll(".quiz-option").forEach((label) => {
@@ -1197,11 +1303,13 @@ function getSelectedQuizAnswers() {
 function appendResultDetail(container, labelKey, value) {
     const detail = document.createElement("p");
     const label = document.createElement("strong");
-    const text = document.createTextNode(`: ${value}`);
+    const separator = document.createTextNode(": ");
+    const valueElement = document.createElement("span");
 
     label.dataset.i18n = labelKey;
     label.textContent = translations[currentLanguage][labelKey];
-    detail.append(label, text);
+    appendInlineMarkdown(valueElement, value);
+    detail.append(label, separator, valueElement);
     container.appendChild(detail);
 }
 
@@ -1217,7 +1325,7 @@ function renderQuizResults(resultData) {
         const resultHeader = document.createElement("div");
         const questionNumber = document.createElement("h3");
         const status = document.createElement("span");
-        const questionText = document.createElement("p");
+        const questionText = document.createElement("div");
 
         resultCard.className = `quiz-result ${result.correct ? "correct" : "incorrect"}`;
         resultHeader.className = "quiz-result-heading";
@@ -1226,8 +1334,8 @@ function renderQuizResults(resultData) {
         status.className = "quiz-result-status";
         status.dataset.i18n = result.correct ? "quizCorrect" : "quizIncorrect";
         status.textContent = translations[currentLanguage][status.dataset.i18n];
-        questionText.className = "quiz-result-question";
-        questionText.textContent = question.question;
+        questionText.className = "quiz-result-question markdown-content";
+        renderMarkdown(questionText, question.question);
 
         resultHeader.append(questionNumber, status);
         resultCard.append(resultHeader, questionText);

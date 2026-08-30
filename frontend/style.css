@@ -467,6 +467,30 @@ button {
     font-weight: 650;
 }
 
+.math-inline {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: -0.12em;
+}
+
+.math-display {
+    max-width: 100%;
+    margin: 14px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-align: center;
+}
+
+.math-display .katex-display {
+    margin: 0;
+}
+
+.math-render-error {
+    color: inherit;
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    overflow-wrap: anywhere;
+}
+
 .loading-message .message-bubble {
     color: var(--text-muted);
 }
@@ -774,6 +798,16 @@ button {
     line-height: 1.55;
 }
 
+.quiz-question-text > :first-child,
+.quiz-result-question > :first-child {
+    margin-top: 0;
+}
+
+.quiz-question-text > :last-child,
+.quiz-result-question > :last-child {
+    margin-bottom: 0;
+}
+
 .quiz-option-group {
     display: grid;
     gap: 8px;
@@ -808,7 +842,7 @@ button {
     accent-color: var(--accent);
 }
 
-.quiz-option span {
+.quiz-option > span {
     min-width: 0;
     overflow-wrap: anywhere;
 }

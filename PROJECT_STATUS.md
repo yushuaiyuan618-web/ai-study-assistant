@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 11 product polish and robustness pass implemented
+Step 12 portfolio packaging and final Quiz math polish ready for manual review
 
 ## Completed
 - Git repository initialized
@@ -100,11 +100,38 @@ Step 11 product polish and robustness pass implemented
 - Real local regressions passed for Chat context, Explain, Quiz scoring, a 30-day plan, TXT/PDF/MD indexing, bilingual RAG, sources, insufficient-context handling, and removal
 - Steps 1–10 and the zero-cost Ollama, local embedding, and local retrieval architecture remain preserved
 
+- README rewritten to present the implemented learning workflows, local-first stack, architecture, RAG pipeline, setup, engineering decisions, limitations, and future work
+- Mermaid architecture diagrams and detailed API, state, trust-boundary, document-ingestion, and RAG documentation added
+- Concise tester guide added with exact local setup commands, feature walkthroughs, troubleshooting, and bilingual checks
+- Portfolio material added with a one-sentence description, three CV bullets, graduate-application paragraph, Chinese explanation, 60-second interview pitch, and eight technical interview questions
+- Major open-source components, model/library roles, licenses, and project-specific engineering documented separately
+- Current GitHub, Hugging Face Spaces, ZeroGPU, Docker Space, model-size, and local-distribution options researched using official sources and mature AI/RAG repositories
+- Tester-friendly local distribution selected because current no-cost hosted options would require a paid compute-Space plan, distort the FastAPI/Ollama architecture, or provide unreliable CPU performance
+- Public deployment intentionally deferred and production/public hosting requirements documented
+- Original non-sensitive machine-learning sample notes added for immediate TXT ingestion and local RAG testing
+- Lightweight Windows and POSIX startup helpers added without automatic installation or model downloads
+- Lightweight GitHub bug-report template added for tester feedback without requesting sensitive data
+- Dependency audit confirmed all eight direct requirements are used, non-duplicated, and consistent in the tested Python 3.12 environment
+- Repository and reachable Git history scanned for high-confidence secrets, private keys, provider tokens, private local paths, and sensitive tracked artifacts; none were found
+- Existing `.gitignore` confirmed to exclude local environments, `.env`, caches, build output, IDE settings, and operating-system junk without hiding source code
+- Project-level license reviewed but intentionally left for the repository owner to select; major integrated components use permissive licenses
+- Documentation checks passed for whitespace, local links, requested portfolio lengths, and eight interview questions
+- Python compilation, JavaScript syntax, dependency consistency, configuration constants, and PDF/TXT/Markdown parsing checks passed
+- Live FastAPI regression passed health/static frontend, multi-turn Chat, Chinese Explain, Quiz generation/scoring, validated 7-day Study Plan, document upload/indexing, local RAG sources, removal, and state cleanup
+- One transient empty Qwen RAG response exercised the existing safe retry/error path; immediate focused service and HTTP-level RAG retries both passed
+- Core application files, requirements, model configuration, local retrieval behavior, and frontend design remained unchanged in Step 12
+- Final Quiz polish added locally vendored KaTeX 0.18.4 for safe inline and block mathematics without a CDN or paid service
+- The existing DOM-based Markdown renderer now supports `$...$`, `\(...\)`, `$$...$$`, and `\[...\]` while excluding inline and fenced code
+- Quiz questions, options, answers, and explanations now use the shared safe math-rendering path instead of displaying raw model notation
+- Quiz generation now explicitly distinguishes average and instantaneous rates, self-checks calculations, aligns explanations with the canonical `correct_index`, and avoids ambiguous mathematical wording
+- Pydantic validation now rejects control-character-corrupted or bare undelimited LaTeX commands and uses the existing safe structured-output retry rather than silently rewriting model answers
+- Required KaTeX expressions, Markdown/code exclusions, deterministic 1 / 2 / 2.01 scoring, malformed notation rejection, static assets, Python/JavaScript syntax, and a live Qwen structured calculus quiz all passed
+
 ## In Progress
 - None
 
 ## Next Step
-- Manually complete the Step 11 cross-breakpoint visual checklist, then review the uncommitted changes before starting Step 12
+- Manually review Quiz math rendering, real screenshots, responsive browser behavior, repository metadata, and the project-level license choice before creating an optional `v1.0.0` release
 
 ## Important Decisions
 - Development will be incremental.
@@ -153,9 +180,19 @@ Step 11 product polish and robustness pass implemented
 - All main modes share one active-view scrolling rule while the document root, app shell, sidebar, and main column remain non-scrolling.
 - New Quiz and Create New Plan are secondary actions; generation, submission, upload, and document questions remain primary actions.
 - Compact 30-day generation changes output length only; the existing schema, validation, level, duration, and time-budget behavior remain unchanged.
+- Step 12 uses GitHub as the source/distribution home and prioritizes accurate local tester instructions over a low-quality hosted demo.
+- Hugging Face deployment was deferred because current Docker/Gradio compute-Space creation is not a truly zero-paid-plan path and free/static alternatives cannot represent the existing application.
+- Startup helpers only locate the project virtual environment and start Uvicorn; they never install software, alter the system, or download model files.
+- `requirements.txt` remains a short list of direct dependencies without arbitrary pin changes; the tested Python/package versions are recorded through the review rather than adding an unverified cross-platform lock.
+- No project-level license was added automatically because licensing original code is an owner/legal decision; third-party licenses are documented independently.
+- Step 12 introduces no deployment container, hosted inference provider, paid API, database, authentication, or new product mode.
+- KaTeX is served locally with its MIT license; untrusted model math uses `trust: false`, bounded size/expansion, and safe text fallback.
 
 ## Known Issues
-- Automated browser interaction was unavailable, so Step 11 desktop/tablet/mobile visual appearance, scrolling, and keyboard focus order need final manual confirmation.
+- Automated browser interaction was unavailable, so Step 11 desktop/tablet/mobile behavior and the final KaTeX visual appearance need manual confirmation.
+- Real application screenshots have not yet been captured, so the README intentionally contains no screenshot section or broken placeholder links.
+- There is no public hosted demo; reviewers currently need local Ollama and both documented models.
+- A project-level license has not yet been selected; original code is not automatically available for reuse until the repository owner adds one.
 - Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
 - Local 30-day Study Plan generation took roughly 60 seconds in the latest warm-model test and may be slower after a cold start.
 - Unfinished quizzes are intentionally lost when the FastAPI process restarts.

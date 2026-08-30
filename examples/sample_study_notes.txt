@@ -1,0 +1,21 @@
+MACHINE LEARNING STUDY NOTES
+
+Supervised learning
+
+Supervised learning uses examples that pair an input with a known target. A model learns a mapping from inputs to targets. Classification predicts a category, such as whether an email is spam. Regression predicts a numeric value, such as the price of a house.
+
+Training, validation, and test data
+
+The training set is used to fit model parameters. The validation set is used during development to compare choices such as model settings and preprocessing. The test set should remain separate until the end so it can provide a less biased estimate of performance on unseen data. Repeatedly choosing settings based on the test set leaks information and makes the final estimate less trustworthy.
+
+Gradient descent
+
+Gradient descent updates model parameters to reduce a loss function. The gradient points in the direction of the steepest increase in loss, so the algorithm moves in the opposite direction. The learning rate controls the size of each update. A rate that is too large can overshoot useful parameter values, while a rate that is too small can make training unnecessarily slow.
+
+Overfitting
+
+Overfitting happens when a model learns details or noise that are specific to the training data and then performs poorly on new examples. Useful responses include collecting more representative data, simplifying the model, adding regularization, or stopping training based on validation performance.
+
+Evaluation
+
+Accuracy is the fraction of predictions that are correct, but it can hide poor behavior when classes are imbalanced. Precision asks what fraction of predicted positive examples are actually positive. Recall asks what fraction of all actual positive examples the model found. The appropriate metric depends on the cost of different mistakes.
