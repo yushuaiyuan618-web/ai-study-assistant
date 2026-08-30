@@ -16,6 +16,13 @@
     display: none !important;
 }
 
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     margin: 0;
     min-width: 320px;
@@ -36,16 +43,21 @@ button {
 
 .app-layout {
     display: flex;
-    min-height: 100vh;
-    min-height: 100dvh;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
 }
 
 .sidebar {
     display: flex;
     flex: 0 0 240px;
     flex-direction: column;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
     padding: 24px 16px 20px;
     border-right: 1px solid var(--border);
     background: #fafafa;
@@ -131,15 +143,16 @@ button {
 .main-content {
     display: flex;
     min-width: 0;
-    height: 100vh;
-    height: 100dvh;
-    flex: 1;
+    min-height: 0;
+    height: 100%;
+    flex: 1 1 auto;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .main-header {
     display: flex;
-    flex-shrink: 0;
+    flex: 0 0 auto;
     align-items: flex-start;
     justify-content: space-between;
     gap: 24px;
@@ -204,17 +217,28 @@ button {
 .study-plan-new-button:focus-visible,
 .document-input:focus-visible,
 .document-upload-button:focus-visible,
-.document-remove-button:focus-visible {
+.document-remove-button:focus-visible,
+.document-select-label input:focus-visible,
+.document-ask-button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
 
+.chat-area,
+.explain-view,
+.quiz-view,
+.study-plan-view,
+.documents-view {
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 .chat-area {
     display: flex;
-    min-height: 0;
-    flex: 1;
     flex-direction: column;
-    overflow-y: auto;
     scroll-behavior: smooth;
 }
 
@@ -430,12 +454,6 @@ button {
     color: #8a4545;
 }
 
-.explain-view {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
-}
-
 .explain-container {
     width: min(760px, 100%);
     margin: 0 auto;
@@ -578,12 +596,6 @@ button {
 
 .explain-output.error {
     color: #8a4545;
-}
-
-.quiz-view {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
 }
 
 .quiz-container {
@@ -868,12 +880,6 @@ button {
     margin-top: 30px;
 }
 
-.study-plan-view {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
-}
-
 .study-plan-container {
     width: min(760px, 100%);
     margin: 0 auto;
@@ -1133,12 +1139,6 @@ button {
     margin-top: 30px;
 }
 
-.documents-view {
-    min-height: 0;
-    flex: 1;
-    overflow-y: auto;
-}
-
 .documents-container {
     width: min(760px, 100%);
     margin: 0 auto;
@@ -1284,6 +1284,26 @@ button {
     overflow-wrap: anywhere;
 }
 
+.document-title-group {
+    display: grid;
+    gap: 9px;
+}
+
+.document-select-label {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.document-select-label input {
+    margin: 0;
+    accent-color: var(--accent);
+}
+
 .document-remove-button {
     flex-shrink: 0;
     padding: 6px 9px;
@@ -1330,10 +1350,8 @@ button {
 }
 
 .document-preview {
-    max-height: 280px;
     margin: 0;
     padding: 14px 15px;
-    overflow: auto;
     border: 1px solid var(--border);
     border-radius: 9px;
     color: var(--text);
@@ -1345,8 +1363,135 @@ button {
     white-space: pre-wrap;
 }
 
+.document-ask-section {
+    margin-top: 42px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+}
+
+.document-ask-header {
+    margin-bottom: 18px;
+}
+
+.document-ask-header h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.document-ask-header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.document-ask-form {
+    display: grid;
+    gap: 11px;
+}
+
+.document-ask-form textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 13px 14px;
+    resize: vertical;
+    border: 1px solid #dcdce0;
+    border-radius: 10px;
+    outline: 0;
+    color: var(--text);
+    background: var(--surface);
+    line-height: 1.55;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.document-ask-form textarea:focus {
+    border-color: #b9b9bf;
+    box-shadow: 0 1px 4px rgba(25, 25, 28, 0.08);
+}
+
+.document-ask-form textarea::placeholder {
+    color: #999ca8;
+}
+
+.document-ask-button {
+    width: fit-content;
+    padding: 10px 17px;
+    border: 0;
+    border-radius: 9px;
+    color: #ffffff;
+    background: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.document-ask-button:hover {
+    filter: brightness(0.9);
+}
+
+.document-ask-button:disabled {
+    cursor: default;
+    opacity: 0.55;
+    filter: none;
+}
+
+.document-ask-message {
+    margin: 14px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.document-ask-message.error {
+    color: #8a4545;
+}
+
+.document-answer {
+    margin-top: 32px;
+    padding-top: 26px;
+    border-top: 1px solid var(--border);
+}
+
+.document-answer > h3,
+.document-sources h4 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.document-answer-output {
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+.document-sources {
+    margin-top: 25px;
+}
+
+.document-source-list,
+.document-sources ol {
+    margin: 0;
+    padding-left: 22px;
+}
+
+.document-sources li + li {
+    margin-top: 13px;
+}
+
+.document-sources li > p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.document-source-snippet {
+    margin-top: 3px !important;
+    color: var(--text-muted);
+}
+
 .input-area {
-    flex-shrink: 0;
+    flex: 0 0 auto;
     padding: 18px 40px 16px;
     background: var(--surface);
 }
@@ -1532,5 +1677,9 @@ button {
 
     .document-item-header {
         gap: 12px;
+    }
+
+    .document-ask-section {
+        margin-top: 34px;
     }
 }

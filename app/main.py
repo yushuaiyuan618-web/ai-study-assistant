@@ -24,7 +24,14 @@ from app.document_service import (
     DocumentServiceError,
     create_document,
     document_preview,
+    get_document,
     remove_document,
+)
+from app.rag_service import (
+    RagServiceError,
+    answer_document_question,
+    index_document,
+    remove_document_index,
 )
 
 
@@ -77,6 +84,20 @@ class StudyPlanRequest(BaseModel):
     language: Literal["en", "zh"]
 
 
+class DocumentAskRequest(BaseModel):
+    question: str = Field(max_length=2_000)
+    document_ids: list[str] = Field(min_length=1, max_length=10)
+    language: Literal["en", "zh"]
+
+    @field_validator("document_ids")
+    @classmethod
+    def validate_document_ids(cls, document_ids):
+        cleaned_ids = [document_id.strip() for document_id in document_ids]
+        if any(not document_id for document_id in cleaned_ids):
+            raise ValueError("Document IDs cannot be blank.")
+        return list(dict.fromkeys(cleaned_ids))
+
+
 def _ai_http_error(error):
     if isinstance(error, AIConfigurationError):
         return HTTPException(status_code=503, detail="ai_configuration_error")
@@ -92,6 +113,10 @@ def _ai_http_error(error):
 
 
 def _document_http_error(error):
+    return HTTPException(status_code=error.status_code, detail=error.code)
+
+
+def _rag_http_error(error):
     return HTTPException(status_code=error.status_code, detail=error.code)
 
 
@@ -242,7 +267,43 @@ async def upload_document(
     except DocumentServiceError as error:
         raise _document_http_error(error) from error
 
-    return document_preview(document)
+    try:
+        chunk_count = index_document(document)
+    except RagServiceError as error:
+        remove_document_index(document.document_id)
+        try:
+            remove_document(document.document_id)
+        except DocumentServiceError:
+            logger.error("Unable to clean up a document after indexing failed.")
+        raise _rag_http_error(error) from error
+
+    response = document_preview(document)
+    response.update({"rag_ready": True, "chunk_count": chunk_count})
+    return response
+
+
+@app.post("/api/documents/ask")
+def ask_documents(document_request: DocumentAskRequest):
+    question = document_request.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="document_question_empty")
+
+    if any(
+        get_document(document_id) is None
+        for document_id in document_request.document_ids
+    ):
+        raise HTTPException(status_code=404, detail="document_not_found")
+
+    try:
+        return answer_document_question(
+            question,
+            document_request.document_ids,
+            document_request.language,
+        )
+    except RagServiceError as error:
+        raise _rag_http_error(error) from error
+    except AIServiceError as error:
+        raise _ai_http_error(error) from error
 
 
 @app.delete("/api/documents/{document_id}")
@@ -250,8 +311,10 @@ def delete_document(document_id: str):
     try:
         remove_document(document_id)
     except DocumentServiceError as error:
+        remove_document_index(document_id)
         raise _document_http_error(error) from error
 
+    remove_document_index(document_id)
     return {"document_id": document_id, "removed": True}
 
 

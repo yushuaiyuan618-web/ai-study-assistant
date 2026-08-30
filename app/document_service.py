@@ -49,6 +49,7 @@ class ParsedDocument:
     page_count: int | None
     text_length: int
     text: str
+    pages: list[str] | None
 
 
 document_store: dict[str, ParsedDocument] = {}
@@ -147,7 +148,7 @@ def _extract_text_document(file_bytes):
     if not text:
         raise EmptyFileError()
 
-    return text, None
+    return text, None, None
 
 
 def _extract_pdf(file_bytes):
@@ -184,7 +185,7 @@ def _extract_pdf(file_bytes):
     if len(text) < MIN_PDF_TEXT_CHARACTERS:
         raise NoReadablePdfTextError()
 
-    return text, page_count
+    return text, page_count, page_texts
 
 
 def create_document(filename, content_type, file_bytes):
@@ -199,9 +200,9 @@ def create_document(filename, content_type, file_bytes):
         raise DocumentLimitReachedError()
 
     if file_type == "pdf":
-        text, page_count = _extract_pdf(file_bytes)
+        text, page_count, pages = _extract_pdf(file_bytes)
     else:
-        text, page_count = _extract_text_document(file_bytes)
+        text, page_count, pages = _extract_text_document(file_bytes)
 
     if len(text) > MAX_TEXT_CHARACTERS:
         raise ExtractedTextTooLargeError()
@@ -214,6 +215,7 @@ def create_document(filename, content_type, file_bytes):
         page_count=page_count,
         text_length=len(text),
         text=text,
+        pages=pages,
     )
     document_store[document.document_id] = document
     return document

@@ -428,6 +428,42 @@
                         <h3 data-i18n="documentListTitle">Uploaded Documents</h3>
                         <div class="document-list" id="documentList"></div>
                     </section>
+
+                    <section class="document-ask-section" aria-labelledby="documentAskTitle">
+                        <header class="document-ask-header">
+                            <h3 id="documentAskTitle" data-i18n="documentAskTitle">Ask Your Materials</h3>
+                            <p data-i18n="documentAskDescription">
+                                Ask a question using the selected documents as sources.
+                            </p>
+                        </header>
+
+                        <form class="document-ask-form" id="documentAskForm" aria-busy="false">
+                            <label class="visually-hidden" for="documentQuestion" data-i18n="documentQuestionLabel">
+                                Question about your documents
+                            </label>
+                            <textarea
+                                id="documentQuestion"
+                                name="question"
+                                rows="3"
+                                placeholder="Ask a question about your documents..."
+                                data-i18n-placeholder="documentQuestionPlaceholder"
+                            ></textarea>
+                            <button class="document-ask-button" type="submit" data-i18n="documentAskAction">
+                                Ask
+                            </button>
+                        </form>
+
+                        <p class="document-ask-message" id="documentAskMessage" aria-live="polite" hidden></p>
+
+                        <article class="document-answer" id="documentAnswer" aria-live="polite" hidden>
+                            <h3 data-i18n="documentAnswerTitle">Answer</h3>
+                            <div class="document-answer-output markdown-content" id="documentAnswerOutput"></div>
+                            <section class="document-sources" id="documentSources" hidden>
+                                <h4 data-i18n="documentSourcesTitle">Sources</h4>
+                                <ol id="documentSourceList"></ol>
+                            </section>
+                        </article>
+                    </section>
                 </div>
             </section>
 

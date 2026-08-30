@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 9 Documents mode implemented
+Step 10 local document RAG implemented
 
 ## Completed
 - Git repository initialized
@@ -73,12 +73,26 @@ Step 9 Documents mode implemented
 - Documents state remains separate from Chat, Explain, Quiz, and Study Plan state
 - TXT, Markdown, two-page PDF, validation, preview, storage, multiple-record, and removal tests passed
 - Existing Chat context, Explain, Quiz, and Study Plan endpoints passed live regression checks after Step 9
+- Uploaded PDF, TXT, and Markdown documents are chunked and embedded locally when uploaded
+- Local multilingual embeddings use Ollama with `bge-m3`; Qwen3.5 4B remains the answer-generation model
+- Semantic text splitting uses bounded 1,200-character chunks with 180-character contextual overlap
+- Document vectors use normalized NumPy `float32` arrays and exact in-memory cosine similarity
+- `/api/documents/ask` validates questions and selected document IDs, embeds each query once, and retrieves the most relevant chunks
+- RAG retrieval uses a top-k value of 4, a relevance threshold, and lightweight neighboring-chunk diversity
+- Document answers are grounded in retrieved excerpts and return structured source metadata, including PDF page numbers
+- English and Simplified Chinese document questions are supported, including Chinese questions over English source material
+- Retrieved document text is isolated as untrusted source material so embedded instructions cannot override backend rules
+- Unrelated questions return a controlled insufficient-evidence response instead of using general model knowledge
+- Removing a document also removes its in-memory chunks and embeddings
+- Real local RAG checks passed for TXT, Markdown, PDF, multiple documents, bilingual retrieval, grounding, prompt injection resistance, sources, and cleanup
+- The viewport-bound application shell keeps the desktop sidebar visible while each main view scrolls independently
+- Existing Chat context, Explain, Quiz, and Study Plan passed live regression checks after the Step 10 changes
 
 ## In Progress
 - None
 
 ## Next Step
-- Manually verify the Step 9 Documents interface, then review the uncommitted changes before starting Step 10
+- Manually verify the Step 10 Documents question-answering interface, then review the uncommitted changes before starting Step 11
 
 ## Important Decisions
 - Development will be incremental.
@@ -114,15 +128,25 @@ Step 9 Documents mode implemented
 - Research compared pypdf, PyMuPDF, and pdfplumber; pypdf was selected for its light pure-Python dependency, permissive license, and sufficient plain-text extraction.
 - Hugging Face components were not added because its experimental PDF dataset support wraps pdfplumber and adds unnecessary weight for simple extraction.
 - Uploaded files are processed from bounded in-memory bytes and are not saved using user-controlled paths.
-- Full document text remains available by document ID for future Step 10 work, but no chunking, embeddings, retrieval, or RAG exists yet.
+- Full document text and its RAG index remain in process memory only; restarting FastAPI intentionally clears both.
 - Temporary documents are limited to 10 files, 10 MB per upload, and 1,000,000 extracted characters each.
+- Research compared `bge-m3`, `nomic-embed-text-v2-moe`, and `multilingual-e5-large`; `bge-m3` was selected for strong English and Chinese support through the existing local Ollama runtime.
+- `semantic-text-splitter` preserves natural text and Markdown boundaries without adding a large framework.
+- NumPy exact cosine search is intentionally used instead of FAISS or a vector database because Step 10 stores at most 10 temporary documents.
+- Document embeddings are created once at upload time in batches; each question creates only one new query embedding.
+- RAG uses `RAG_TOP_K=4` by default and a conservative similarity threshold to avoid unsupported answers.
+- Only retrieved chunks, not complete documents or normal Chat history, are sent to Qwen for each Documents question.
+- Documents questions are one-shot and remain isolated from AI Chat, Explain, Quiz, and Study Plan state.
 
 ## Known Issues
 - Automated browser interaction was unavailable, so Study Plan navigation, controls, generated layout, language switching, reset behavior, and responsive styling need a brief manual visual check.
 - Automated browser interaction was unavailable, so Documents navigation, upload styling, bilingual labels, preview scrolling, and removal need a brief manual visual check.
+- Automated browser interaction was unavailable, so document selection, question submission, sources, bilingual labels, loading/error states, and responsive Step 10 styling need a brief manual visual check.
 - Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
 - Local 30-day Study Plan generation took roughly 95 seconds in warm-model tests and may be slower after a cold start.
 - Unfinished quizzes are intentionally lost when the FastAPI process restarts.
 - Generated study plans are intentionally lost when the page is refreshed.
 - Uploaded documents are intentionally lost when the FastAPI process restarts.
+- RAG chunks and embeddings are intentionally lost when the FastAPI process restarts and are rebuilt only by uploading documents again.
+- The first `bge-m3` embedding or Qwen answer after a cold start may take longer while Ollama loads the model.
 - Scanned/image-only PDFs are unsupported because Step 9 does not include OCR.

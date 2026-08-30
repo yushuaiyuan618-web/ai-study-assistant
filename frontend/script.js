@@ -56,6 +56,14 @@ const documentUploadButton = document.querySelector(".document-upload-button");
 const documentMessage = document.querySelector("#documentMessage");
 const documentListSection = document.querySelector("#documentListSection");
 const documentList = document.querySelector("#documentList");
+const documentAskForm = document.querySelector("#documentAskForm");
+const documentQuestion = document.querySelector("#documentQuestion");
+const documentAskButton = document.querySelector(".document-ask-button");
+const documentAskMessage = document.querySelector("#documentAskMessage");
+const documentAnswer = document.querySelector("#documentAnswer");
+const documentAnswerOutput = document.querySelector("#documentAnswerOutput");
+const documentSources = document.querySelector("#documentSources");
+const documentSourceList = document.querySelector("#documentSourceList");
 
 const translations = {
     en: {
@@ -148,6 +156,7 @@ const translations = {
         documentSizeLimit: "Maximum file size: 10 MB",
         documentUploadAction: "Upload",
         documentUploading: "Uploading...",
+        documentPreparing: "Preparing document for AI...",
         documentNoFile: "Choose a PDF, TXT, or Markdown file.",
         documentTooLarge: "File is too large. Maximum size is 10 MB.",
         documentUnsupported: "Unsupported file type. Please upload a PDF, TXT, or Markdown file.",
@@ -165,8 +174,29 @@ const translations = {
         documentPages: "Pages",
         documentCharacters: "Characters",
         documentPreview: "Text Preview",
+        documentChunks: "Chunks",
+        documentAiStatus: "AI Status",
+        documentReady: "Ready",
+        documentSelect: "Use for questions",
         documentRemove: "Remove",
         documentRemoving: "Removing...",
+        documentAskTitle: "Ask Your Materials",
+        documentAskDescription: "Ask a question using the selected documents as sources.",
+        documentQuestionLabel: "Question about your documents",
+        documentQuestionPlaceholder: "Ask a question about your documents...",
+        documentAskAction: "Ask",
+        documentSearching: "Searching your materials...",
+        documentQuestionBlank: "Enter a question about your documents.",
+        documentSelectionRequired: "Select at least one document.",
+        documentEmbeddingModelMissing: "The local embedding model is not installed. Please install it and try again.",
+        documentEmbeddingUnavailable: "Cannot connect to the local embedding service. Please make sure Ollama is running.",
+        documentEmbeddingTimeout: "Preparing or searching the document took too long. Please try again.",
+        documentNotIndexed: "This document is not ready for AI questions. Please upload it again.",
+        documentSearchError: "Unable to search your documents right now. Please try again.",
+        documentAnswerTitle: "Answer",
+        documentSourcesTitle: "Sources",
+        documentSourcePage: "page",
+        documentSourceChunk: "chunk",
         inputLabel: "Study question",
         inputPlaceholder: "Ask anything about your studies...",
         send: "Send",
@@ -271,6 +301,7 @@ const translations = {
         documentSizeLimit: "最大文件大小：10 MB",
         documentUploadAction: "上传",
         documentUploading: "正在上传...",
+        documentPreparing: "正在为 AI 准备资料...",
         documentNoFile: "请选择 PDF、TXT 或 Markdown 文件。",
         documentTooLarge: "文件过大，最大支持 10 MB。",
         documentUnsupported: "不支持该文件类型，请上传 PDF、TXT 或 Markdown 文件。",
@@ -288,8 +319,29 @@ const translations = {
         documentPages: "页数",
         documentCharacters: "字符数",
         documentPreview: "文本预览",
+        documentChunks: "分块数",
+        documentAiStatus: "AI 状态",
+        documentReady: "已就绪",
+        documentSelect: "用于提问",
         documentRemove: "移除",
         documentRemoving: "正在移除...",
+        documentAskTitle: "询问学习资料",
+        documentAskDescription: "基于你选择的学习资料进行提问。",
+        documentQuestionLabel: "针对学习资料的问题",
+        documentQuestionPlaceholder: "针对你的学习资料提问...",
+        documentAskAction: "提问",
+        documentSearching: "正在检索学习资料...",
+        documentQuestionBlank: "请输入针对学习资料的问题。",
+        documentSelectionRequired: "请至少选择一份学习资料。",
+        documentEmbeddingModelMissing: "本地嵌入模型尚未安装，请安装后重试。",
+        documentEmbeddingUnavailable: "无法连接本地嵌入服务，请确认 Ollama 已启动。",
+        documentEmbeddingTimeout: "资料准备或检索超时，请重试。",
+        documentNotIndexed: "该资料尚未准备好用于 AI 提问，请重新上传。",
+        documentSearchError: "暂时无法检索学习资料，请稍后再试。",
+        documentAnswerTitle: "回答",
+        documentSourcesTitle: "来源",
+        documentSourcePage: "第 {number} 页",
+        documentSourceChunk: "第 {number} 段",
         inputLabel: "学习问题",
         inputPlaceholder: "输入你的学习问题...",
         send: "发送",
@@ -325,7 +377,14 @@ const documentErrorTranslationKeyByCode = {
     extracted_text_too_large: "documentTextTooLarge",
     document_limit_reached: "documentLimitReached",
     document_not_found: "documentNotFound",
-    document_processing_error: "documentProcessingError"
+    document_processing_error: "documentProcessingError",
+    embedding_model_not_found: "documentEmbeddingModelMissing",
+    embedding_service_unavailable: "documentEmbeddingUnavailable",
+    embedding_request_timeout: "documentEmbeddingTimeout",
+    document_indexing_error: "documentSearchError",
+    document_not_indexed: "documentNotIndexed",
+    document_search_error: "documentSearchError",
+    document_question_empty: "documentQuestionBlank"
 };
 
 const DOCUMENT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -346,7 +405,10 @@ let selectedStudyLevel = "beginner";
 let selectedStudyDuration = 7;
 let currentStudyPlan = null;
 let isUploadingDocument = false;
+let isAskingDocuments = false;
+let currentDocumentAnswer = null;
 const uploadedDocuments = [];
+const selectedDocumentIds = new Set();
 const conversationHistory = [];
 
 function applyLanguage(language) {
@@ -447,6 +509,32 @@ function updateDocumentLocalizedText() {
     document.querySelectorAll("[data-document-size]").forEach((element) => {
         element.textContent = formatFileSize(Number(element.dataset.documentSize));
     });
+
+    document.querySelectorAll("[data-document-select-id]").forEach((element) => {
+        const documentData = uploadedDocuments.find(
+            (item) => item.document_id === element.dataset.documentSelectId
+        );
+        if (documentData) {
+            element.setAttribute(
+                "aria-label",
+                `${translations[currentLanguage].documentSelect}: ${documentData.filename}`
+            );
+        }
+    });
+
+    document.querySelectorAll("[data-source-page]").forEach((element) => {
+        const number = element.dataset.sourcePage;
+        element.textContent = currentLanguage === "zh"
+            ? translations.zh.documentSourcePage.replace("{number}", number)
+            : `${translations.en.documentSourcePage} ${number}`;
+    });
+
+    document.querySelectorAll("[data-source-chunk]").forEach((element) => {
+        const number = element.dataset.sourceChunk;
+        element.textContent = currentLanguage === "zh"
+            ? translations.zh.documentSourceChunk.replace("{number}", number)
+            : `${translations.en.documentSourceChunk} ${number}`;
+    });
 }
 
 function resizeMessageInput() {
@@ -499,7 +587,7 @@ function setActiveView(view) {
     } else if (isStudyPlanView && !currentStudyPlan) {
         studyPlanGoal.focus();
     } else if (isDocumentsView) {
-        documentInput.focus();
+        (uploadedDocuments.length ? documentQuestion : documentInput).focus();
     }
 }
 
@@ -1414,9 +1502,151 @@ function setDocumentUploadingState(uploading) {
     documentUploadButton.disabled = uploading;
     documentUploadForm.setAttribute("aria-busy", uploading);
 
-    const translationKey = uploading ? "documentUploading" : "documentUploadAction";
+    const translationKey = uploading ? "documentPreparing" : "documentUploadAction";
     documentUploadButton.dataset.i18n = translationKey;
     documentUploadButton.textContent = translations[currentLanguage][translationKey];
+}
+
+function showDocumentAskMessage(translationKey, state = "") {
+    documentAskMessage.hidden = false;
+    documentAskMessage.className = `document-ask-message${state ? ` ${state}` : ""}`;
+    documentAskMessage.dataset.i18n = translationKey;
+    documentAskMessage.textContent = translations[currentLanguage][translationKey];
+}
+
+function clearDocumentAskMessage() {
+    documentAskMessage.hidden = true;
+    documentAskMessage.className = "document-ask-message";
+    documentAskMessage.textContent = "";
+    delete documentAskMessage.dataset.i18n;
+}
+
+function clearDocumentAnswer() {
+    currentDocumentAnswer = null;
+    documentAnswer.hidden = true;
+    documentAnswerOutput.textContent = "";
+    documentSourceList.textContent = "";
+    documentSources.hidden = true;
+}
+
+function setDocumentAskingState(asking) {
+    isAskingDocuments = asking;
+    documentQuestion.disabled = asking;
+    documentAskButton.disabled = asking;
+    documentAskForm.setAttribute("aria-busy", asking);
+    documentList.querySelectorAll(
+        "input[type='checkbox'], .document-remove-button"
+    ).forEach((control) => {
+        control.disabled = asking;
+    });
+
+    const translationKey = asking ? "documentSearching" : "documentAskAction";
+    documentAskButton.dataset.i18n = translationKey;
+    documentAskButton.textContent = translations[currentLanguage][translationKey];
+}
+
+function renderDocumentAnswer(answerData) {
+    currentDocumentAnswer = answerData;
+    documentAnswerOutput.textContent = "";
+    renderMarkdown(documentAnswerOutput, answerData.reply);
+    documentSourceList.textContent = "";
+
+    answerData.sources.forEach((source) => {
+        const sourceItem = document.createElement("li");
+        const sourceHeading = document.createElement("p");
+        const filename = document.createElement("strong");
+        const separator = document.createTextNode(" — ");
+        const location = document.createElement("span");
+        const snippet = document.createElement("p");
+
+        filename.textContent = source.filename;
+        if (source.page_number !== null) {
+            location.dataset.sourcePage = source.page_number;
+        } else {
+            location.dataset.sourceChunk = source.chunk_index + 1;
+        }
+        snippet.className = "document-source-snippet";
+        snippet.textContent = source.snippet;
+        sourceHeading.append(filename, separator, location);
+        sourceItem.append(sourceHeading, snippet);
+        documentSourceList.appendChild(sourceItem);
+    });
+
+    documentSources.hidden = answerData.sources.length === 0;
+    documentAnswer.hidden = false;
+    updateDocumentLocalizedText();
+}
+
+async function askDocumentQuestion() {
+    const question = documentQuestion.value.trim();
+    const documentIds = [...selectedDocumentIds];
+
+    if (!question) {
+        showDocumentAskMessage("documentQuestionBlank", "error");
+        documentQuestion.focus();
+        return;
+    }
+    if (documentIds.length === 0) {
+        showDocumentAskMessage("documentSelectionRequired", "error");
+        return;
+    }
+    if (isAskingDocuments) {
+        return;
+    }
+
+    const requestLanguage = currentLanguage;
+    setDocumentAskingState(true);
+    clearDocumentAnswer();
+    showDocumentAskMessage("documentSearching", "loading");
+    let errorTranslationKey = "documentSearchError";
+
+    try {
+        const response = await fetch("/api/documents/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                question,
+                document_ids: documentIds,
+                language: requestLanguage
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            errorTranslationKey =
+                documentErrorTranslationKeyByCode[errorData.detail] ||
+                errorTranslationKeyByCode[errorData.detail] ||
+                "documentSearchError";
+            throw new Error("The document question request failed.");
+        }
+
+        const data = await response.json();
+        const hasValidShape =
+            typeof data.reply === "string" &&
+            data.reply.trim() &&
+            Array.isArray(data.sources) &&
+            data.sources.every((source) =>
+                typeof source.document_id === "string" &&
+                typeof source.filename === "string" &&
+                (source.page_number === null || Number.isInteger(source.page_number)) &&
+                Number.isInteger(source.chunk_index) &&
+                typeof source.snippet === "string"
+            );
+
+        if (!hasValidShape) {
+            throw new Error("The document answer response was incomplete.");
+        }
+
+        clearDocumentAskMessage();
+        renderDocumentAnswer(data);
+    } catch {
+        showDocumentAskMessage(errorTranslationKey, "error");
+    } finally {
+        setDocumentAskingState(false);
+        documentQuestion.focus();
+    }
 }
 
 function validateDocumentFile(file) {
@@ -1457,6 +1687,7 @@ function appendDocumentMetadata(container, labelKey, value, data = {}) {
 
     item.append(label, content);
     container.appendChild(item);
+    return content;
 }
 
 async function removeDocumentRequest(documentData, documentCard, removeButton) {
@@ -1489,8 +1720,11 @@ async function removeDocumentRequest(documentData, documentCard, removeButton) {
         if (documentIndex !== -1) {
             uploadedDocuments.splice(documentIndex, 1);
         }
+        selectedDocumentIds.delete(documentData.document_id);
         documentCard.remove();
         documentListSection.hidden = uploadedDocuments.length === 0;
+        clearDocumentAnswer();
+        clearDocumentAskMessage();
         clearDocumentMessage();
     } catch {
         showDocumentMessage(errorTranslationKey, "error");
@@ -1504,7 +1738,11 @@ async function removeDocumentRequest(documentData, documentCard, removeButton) {
 function renderDocument(documentData) {
     const documentCard = document.createElement("article");
     const header = document.createElement("div");
+    const titleGroup = document.createElement("div");
     const filename = document.createElement("h4");
+    const selectLabel = document.createElement("label");
+    const selectCheckbox = document.createElement("input");
+    const selectText = document.createElement("span");
     const removeButton = document.createElement("button");
     const metadata = document.createElement("dl");
     const previewHeading = document.createElement("h5");
@@ -1513,7 +1751,29 @@ function renderDocument(documentData) {
     documentCard.className = "document-item";
     documentCard.dataset.documentId = documentData.document_id;
     header.className = "document-item-header";
+    titleGroup.className = "document-title-group";
     filename.textContent = documentData.filename;
+    selectLabel.className = "document-select-label";
+    selectCheckbox.type = "checkbox";
+    selectCheckbox.checked = selectedDocumentIds.has(documentData.document_id);
+    selectCheckbox.dataset.documentSelectId = documentData.document_id;
+    selectCheckbox.setAttribute(
+        "aria-label",
+        `${translations[currentLanguage].documentSelect}: ${documentData.filename}`
+    );
+    selectText.dataset.i18n = "documentSelect";
+    selectText.textContent = translations[currentLanguage].documentSelect;
+    selectCheckbox.addEventListener("change", () => {
+        if (selectCheckbox.checked) {
+            selectedDocumentIds.add(documentData.document_id);
+        } else {
+            selectedDocumentIds.delete(documentData.document_id);
+        }
+        clearDocumentAnswer();
+        clearDocumentAskMessage();
+    });
+    selectLabel.append(selectCheckbox, selectText);
+    titleGroup.append(filename, selectLabel);
     removeButton.className = "document-remove-button";
     removeButton.type = "button";
     removeButton.dataset.i18n = "documentRemove";
@@ -1521,7 +1781,7 @@ function renderDocument(documentData) {
     removeButton.addEventListener("click", () => {
         removeDocumentRequest(documentData, documentCard, removeButton);
     });
-    header.append(filename, removeButton);
+    header.append(titleGroup, removeButton);
 
     metadata.className = "document-meta";
     appendDocumentMetadata(metadata, "documentType", documentData.file_type.toUpperCase());
@@ -1535,6 +1795,10 @@ function renderDocument(documentData) {
         appendDocumentMetadata(metadata, "documentPages", documentData.page_count);
     }
     appendDocumentMetadata(metadata, "documentCharacters", documentData.text_length);
+    appendDocumentMetadata(metadata, "documentChunks", documentData.chunk_count);
+    const statusValue = appendDocumentMetadata(metadata, "documentAiStatus", "");
+    statusValue.dataset.i18n = "documentReady";
+    statusValue.textContent = translations[currentLanguage].documentReady;
 
     previewHeading.dataset.i18n = "documentPreview";
     previewHeading.textContent = translations[currentLanguage].documentPreview;
@@ -1586,6 +1850,9 @@ async function uploadDocumentRequest() {
             SUPPORTED_DOCUMENT_EXTENSIONS.includes(data.file_type) &&
             Number.isInteger(data.size_bytes) &&
             Number.isInteger(data.text_length) &&
+            data.rag_ready === true &&
+            Number.isInteger(data.chunk_count) &&
+            data.chunk_count > 0 &&
             typeof data.preview === "string" &&
             (data.page_count === null || Number.isInteger(data.page_count));
 
@@ -1594,6 +1861,7 @@ async function uploadDocumentRequest() {
         }
 
         uploadedDocuments.push(data);
+        selectedDocumentIds.add(data.document_id);
         renderDocument(data);
         documentInput.value = "";
         clearDocumentMessage();
@@ -1635,10 +1903,24 @@ documentUploadForm.addEventListener("submit", (event) => {
     uploadDocumentRequest();
 });
 
+documentAskForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    askDocumentQuestion();
+});
+
 quizNewButton.addEventListener("click", resetQuiz);
 studyPlanNewButton.addEventListener("click", resetStudyPlan);
 
 documentInput.addEventListener("change", clearDocumentMessage);
+
+documentQuestion.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        askDocumentQuestion();
+    }
+});
+
+documentQuestion.addEventListener("input", clearDocumentAskMessage);
 
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
