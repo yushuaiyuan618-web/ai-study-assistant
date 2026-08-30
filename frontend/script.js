@@ -35,7 +35,12 @@ const translations = {
         inputHint: "Press Enter to send · Shift + Enter for a new line",
         you: "You",
         thinking: "Thinking...",
-        localAiError: "Local AI is not available. Please make sure Ollama is running.",
+        aiConfigurationError: "The local AI configuration is invalid. Please check the backend settings.",
+        ollamaUnavailable: "Cannot connect to Ollama. Please make sure the Ollama server is running.",
+        modelNotFound: "The configured Ollama model was not found. Please install it and try again.",
+        aiRequestTimeout: "The local AI request took too long. Please try again.",
+        emptyAiResponse: "The AI returned an empty response after retrying. Please try again.",
+        aiGenerationError: "The local AI could not generate a response. Please try again.",
         connectionError: "Unable to connect to the server. Please make sure the backend is running."
     },
     zh: {
@@ -66,9 +71,23 @@ const translations = {
         inputHint: "按 Enter 发送 · 按 Shift + Enter 换行",
         you: "你",
         thinking: "正在思考...",
-        localAiError: "本地 AI 暂时无法使用，请确认 Ollama 已经启动。",
+        aiConfigurationError: "本地 AI 配置无效，请检查后端设置。",
+        ollamaUnavailable: "无法连接到 Ollama，请确认 Ollama 服务已经启动。",
+        modelNotFound: "未找到配置的 Ollama 模型，请先安装模型后重试。",
+        aiRequestTimeout: "本地 AI 响应超时，请重试。",
+        emptyAiResponse: "AI 重试后仍返回空内容，请重试。",
+        aiGenerationError: "本地 AI 无法生成回复，请重试。",
         connectionError: "无法连接到服务器，请确认后端已经启动。"
     }
+};
+
+const errorTranslationKeyByCode = {
+    ai_configuration_error: "aiConfigurationError",
+    ollama_unavailable: "ollamaUnavailable",
+    model_not_found: "modelNotFound",
+    ai_request_timeout: "aiRequestTimeout",
+    empty_ai_response: "emptyAiResponse",
+    ai_generation_error: "aiGenerationError"
 };
 
 const savedLanguage = localStorage.getItem("studyAssistantLanguage");
@@ -120,6 +139,197 @@ function setSendingState(sending) {
     chatForm.setAttribute("aria-busy", sending);
 }
 
+function appendInlineMarkdown(container, text) {
+    const tokenPattern = /(`[^`\n]+`|\*\*[^*\n]+?\*\*)/g;
+    let lastIndex = 0;
+
+    for (const match of text.matchAll(tokenPattern)) {
+        container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+
+        const token = match[0];
+        const element = document.createElement(token.startsWith("`") ? "code" : "strong");
+        const markerLength = token.startsWith("`") ? 1 : 2;
+        element.textContent = token.slice(markerLength, -markerLength);
+        container.appendChild(element);
+        lastIndex = match.index + token.length;
+    }
+
+    container.appendChild(document.createTextNode(text.slice(lastIndex)));
+}
+
+function splitTableRow(line) {
+    let row = line.trim();
+
+    if (row.startsWith("|")) {
+        row = row.slice(1);
+    }
+    if (row.endsWith("|")) {
+        row = row.slice(0, -1);
+    }
+
+    return row.split("|").map((cell) => cell.trim());
+}
+
+function isTableSeparator(line) {
+    const cells = splitTableRow(line);
+    return cells.length > 1 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function isMarkdownBlockStart(lines, index) {
+    const line = lines[index];
+
+    return (
+        /^```/.test(line.trim()) ||
+        /^#{1,6}\s+/.test(line) ||
+        /^\s*[-*+]\s+/.test(line) ||
+        /^\s*\d+\.\s+/.test(line) ||
+        (line.includes("|") && isTableSeparator(lines[index + 1] || ""))
+    );
+}
+
+function renderMarkdown(container, markdown) {
+    const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+    let index = 0;
+
+    container.textContent = "";
+
+    while (index < lines.length) {
+        const line = lines[index];
+
+        if (!line.trim()) {
+            index += 1;
+            continue;
+        }
+
+        const codeFence = line.trim().match(/^```([\w-]*)\s*$/);
+        if (codeFence) {
+            const codeLines = [];
+            index += 1;
+
+            while (index < lines.length && !/^```\s*$/.test(lines[index].trim())) {
+                codeLines.push(lines[index]);
+                index += 1;
+            }
+
+            if (index < lines.length) {
+                index += 1;
+            }
+
+            const preformatted = document.createElement("pre");
+            const code = document.createElement("code");
+            code.textContent = codeLines.join("\n");
+            if (codeFence[1]) {
+                code.dataset.language = codeFence[1];
+            }
+            preformatted.appendChild(code);
+            container.appendChild(preformatted);
+            continue;
+        }
+
+        const heading = line.match(/^(#{1,6})\s+(.+)$/);
+        if (heading) {
+            const headingElement = document.createElement(`h${heading[1].length}`);
+            appendInlineMarkdown(headingElement, heading[2]);
+            container.appendChild(headingElement);
+            index += 1;
+            continue;
+        }
+
+        const unorderedItem = line.match(/^\s*[-*+]\s+(.+)$/);
+        if (unorderedItem) {
+            const list = document.createElement("ul");
+
+            while (index < lines.length) {
+                const item = lines[index].match(/^\s*[-*+]\s+(.+)$/);
+                if (!item) {
+                    break;
+                }
+
+                const listItem = document.createElement("li");
+                appendInlineMarkdown(listItem, item[1]);
+                list.appendChild(listItem);
+                index += 1;
+            }
+
+            container.appendChild(list);
+            continue;
+        }
+
+        const orderedItem = line.match(/^\s*\d+\.\s+(.+)$/);
+        if (orderedItem) {
+            const list = document.createElement("ol");
+
+            while (index < lines.length) {
+                const item = lines[index].match(/^\s*\d+\.\s+(.+)$/);
+                if (!item) {
+                    break;
+                }
+
+                const listItem = document.createElement("li");
+                appendInlineMarkdown(listItem, item[1]);
+                list.appendChild(listItem);
+                index += 1;
+            }
+
+            container.appendChild(list);
+            continue;
+        }
+
+        if (line.includes("|") && isTableSeparator(lines[index + 1] || "")) {
+            const headerCells = splitTableRow(line);
+            const tableWrapper = document.createElement("div");
+            const table = document.createElement("table");
+            const tableHead = document.createElement("thead");
+            const headerRow = document.createElement("tr");
+
+            headerCells.forEach((cell) => {
+                const headerCell = document.createElement("th");
+                appendInlineMarkdown(headerCell, cell);
+                headerRow.appendChild(headerCell);
+            });
+
+            tableHead.appendChild(headerRow);
+            table.appendChild(tableHead);
+            index += 2;
+
+            const tableBody = document.createElement("tbody");
+            while (index < lines.length && lines[index].trim() && lines[index].includes("|")) {
+                const row = document.createElement("tr");
+                const cells = splitTableRow(lines[index]);
+
+                headerCells.forEach((unusedHeader, cellIndex) => {
+                    const cell = document.createElement("td");
+                    appendInlineMarkdown(cell, cells[cellIndex] || "");
+                    row.appendChild(cell);
+                });
+
+                tableBody.appendChild(row);
+                index += 1;
+            }
+
+            table.appendChild(tableBody);
+            tableWrapper.className = "markdown-table-wrapper";
+            tableWrapper.appendChild(table);
+            container.appendChild(tableWrapper);
+            continue;
+        }
+
+        const paragraphLines = [];
+        while (
+            index < lines.length &&
+            lines[index].trim() &&
+            !isMarkdownBlockStart(lines, index)
+        ) {
+            paragraphLines.push(lines[index].trim());
+            index += 1;
+        }
+
+        const paragraph = document.createElement("p");
+        appendInlineMarkdown(paragraph, paragraphLines.join(" "));
+        container.appendChild(paragraph);
+    }
+}
+
 function rememberSuccessfulTurn(userMessage, assistantReply) {
     conversationHistory.push(
         { role: "user", content: userMessage },
@@ -160,10 +370,12 @@ function displayAssistantMessage(message, state = "", translationKey = "") {
     messageAuthor.dataset.i18n = "appName";
     messageAuthor.textContent = translations[currentLanguage].appName;
     messageBubble.className = "message-bubble";
-    messageBubble.textContent = message;
 
     if (translationKey) {
+        messageBubble.textContent = message;
         messageBubble.dataset.i18n = translationKey;
+    } else {
+        renderMarkdown(messageBubble, message);
     }
 
     messageContent.append(messageAuthor, messageBubble);
@@ -212,9 +424,9 @@ async function sendMessage() {
         });
 
         if (!response.ok) {
-            if (response.status === 503) {
-                errorTranslationKey = "localAiError";
-            }
+            const errorData = await response.json().catch(() => ({}));
+            errorTranslationKey =
+                errorTranslationKeyByCode[errorData.detail] || "aiGenerationError";
             throw new Error("The chat request failed.");
         }
 

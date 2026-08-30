@@ -4,7 +4,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from openai import APIConnectionError, APIStatusError, OpenAI, OpenAIError
+from openai import (
+    APIConnectionError,
+    APIStatusError,
+    APITimeoutError,
+    OpenAI,
+    OpenAIError,
+)
 
 
 project_directory = Path(__file__).resolve().parent.parent
@@ -17,12 +23,15 @@ DEFAULT_BASE_URL = "http://localhost:11434/v1/"
 DEFAULT_MODEL = "qwen3.5:4b"
 DEFAULT_API_KEY = "ollama"
 MAX_HISTORY_MESSAGES = 12
+MAX_CONTEXT_CHARACTERS = 3000
 
 STUDY_ASSISTANT_INSTRUCTIONS = (
-    "You are an AI Study Assistant. Explain concepts clearly and prioritize "
-    "understanding over simply giving answers. Adapt to beginners when appropriate, "
-    "break complex ideas into steps, use examples when useful, avoid unnecessary "
-    "jargon, and be concise unless the question needs more detail."
+    "You are an AI Study Assistant. Answer the question directly first and prioritize "
+    "understanding. Keep answers concise by default, prefer short explanations, and "
+    "use one simple example when useful. Adapt to beginners and avoid unnecessary "
+    "jargon, headings, repeated summaries, large tables, or long digressions. Expand "
+    "only when the user explicitly asks for more detail. Prefer simple Unicode notation "
+    "such as 'classification → supervised learning' instead of unnecessary LaTeX."
 )
 
 
@@ -32,6 +41,26 @@ class AIServiceError(Exception):
 
 class AIConfigurationError(AIServiceError):
     """Raised when the AI provider configuration is not supported."""
+
+
+class AIConnectionError(AIServiceError):
+    """Raised when the local Ollama server cannot be reached."""
+
+
+class AIModelNotFoundError(AIServiceError):
+    """Raised when Ollama does not have the configured model."""
+
+
+class AIRequestTimeoutError(AIServiceError):
+    """Raised when local model generation exceeds the request timeout."""
+
+
+class AIEmptyResponseError(AIServiceError):
+    """Raised when Ollama returns no text after one retry."""
+
+
+class AIGenerationError(AIServiceError):
+    """Raised for other local model generation failures."""
 
 
 def _load_configuration():
@@ -69,17 +98,32 @@ def _build_instructions(language):
 
 
 def _build_model_input(message, history=None):
-    model_input = []
+    recent_history = []
+    history_characters_left = max(MAX_CONTEXT_CHARACTERS - len(message), 0)
 
-    for history_message in (history or [])[-MAX_HISTORY_MESSAGES:]:
-        role = history_message.get("role")
-        content = history_message.get("content", "").strip()
+    if history_characters_left:
+        per_message_limit = max((history_characters_left + 1) // 2, 1)
 
-        if role in {"user", "assistant"} and content:
-            model_input.append({"role": role, "content": content})
+        for history_message in reversed((history or [])[-MAX_HISTORY_MESSAGES:]):
+            role = history_message.get("role")
+            content = history_message.get("content", "").strip()
 
-    model_input.append({"role": "user", "content": message})
-    return model_input
+            if role not in {"user", "assistant"} or not content:
+                continue
+
+            content_limit = min(per_message_limit, history_characters_left)
+            if len(content) > content_limit:
+                content = f"{content[: max(content_limit - 1, 0)]}…"
+
+            recent_history.append({"role": role, "content": content})
+            history_characters_left -= len(content)
+
+            if history_characters_left <= 0:
+                break
+
+    recent_history.reverse()
+    recent_history.append({"role": "user", "content": message})
+    return recent_history
 
 
 def generate_reply(message, language, history=None):
@@ -91,36 +135,52 @@ def generate_reply(message, language, history=None):
         max_retries=0,
     )
 
-    try:
-        response = client.responses.create(
-            model=model,
-            instructions=_build_instructions(language),
-            input=_build_model_input(message, history),
-        )
-    except APIConnectionError as error:
-        logger.error(
-            "Could not connect to local Ollama at %s. Make sure Ollama is running.",
-            base_url,
-        )
-        raise AIServiceError("Local Ollama is unavailable.") from error
-    except APIStatusError as error:
-        if error.status_code == 404:
-            logger.error(
-                "Ollama returned 404 for model '%s'. Ensure Ollama supports the "
-                "Responses API and install the model with: ollama pull %s",
-                model,
+    model_input = _build_model_input(message, history)
+    instructions = _build_instructions(language)
+
+    for attempt in range(2):
+        try:
+            response = client.responses.create(
+                model=model,
+                instructions=instructions,
+                input=model_input,
+            )
+        except APITimeoutError as error:
+            logger.error("Ollama request timed out for model '%s'.", model)
+            raise AIRequestTimeoutError("Local AI request timed out.") from error
+        except APIConnectionError as error:
+            logger.error("Could not connect to local Ollama at %s.", base_url)
+            raise AIConnectionError("Local Ollama is unavailable.") from error
+        except APIStatusError as error:
+            if error.status_code == 404:
+                logger.error(
+                    "Ollama could not find model '%s'. Install it with: ollama pull %s",
+                    model,
+                    model,
+                )
+                raise AIModelNotFoundError(
+                    "The configured Ollama model was not found."
+                ) from error
+
+            logger.error("Ollama request failed with HTTP status %s.", error.status_code)
+            raise AIGenerationError(
+                "Local Ollama could not generate a response."
+            ) from error
+        except OpenAIError as error:
+            logger.error("The Ollama-compatible request failed: %s.", type(error).__name__)
+            raise AIGenerationError(
+                "Local Ollama could not generate a response."
+            ) from error
+
+        reply = (response.output_text or "").strip()
+        if reply:
+            return reply
+
+        if attempt == 0:
+            logger.warning(
+                "Ollama returned an empty response for model '%s'; retrying once.",
                 model,
             )
-        else:
-            logger.error("Ollama request failed with HTTP status %s.", error.status_code)
-        raise AIServiceError("Local Ollama could not generate a response.") from error
-    except OpenAIError as error:
-        logger.error("The Ollama-compatible request failed: %s.", type(error).__name__)
-        raise AIServiceError("Local Ollama could not generate a response.") from error
 
-    reply = (response.output_text or "").strip()
-    if not reply:
-        logger.error("Ollama returned an empty response for model '%s'.", model)
-        raise AIServiceError("Local Ollama returned an empty response.")
-
-    return reply
+    logger.error("Ollama returned two empty responses for model '%s'.", model)
+    raise AIEmptyResponseError("Local Ollama returned an empty response after retrying.")

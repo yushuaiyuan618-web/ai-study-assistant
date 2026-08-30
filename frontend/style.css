@@ -305,6 +305,100 @@ button {
     padding: 0 3px;
     border-radius: 0;
     background: transparent;
+    white-space: normal;
+}
+
+.assistant-message .message-bubble > :first-child {
+    margin-top: 0;
+}
+
+.assistant-message .message-bubble > :last-child {
+    margin-bottom: 0;
+}
+
+.assistant-message .message-bubble p,
+.assistant-message .message-bubble ul,
+.assistant-message .message-bubble ol,
+.assistant-message .message-bubble pre,
+.assistant-message .message-bubble .markdown-table-wrapper {
+    margin: 0 0 12px;
+}
+
+.assistant-message .message-bubble h1,
+.assistant-message .message-bubble h2,
+.assistant-message .message-bubble h3,
+.assistant-message .message-bubble h4,
+.assistant-message .message-bubble h5,
+.assistant-message .message-bubble h6 {
+    margin: 18px 0 8px;
+    font-size: 1.05rem;
+    line-height: 1.35;
+}
+
+.assistant-message .message-bubble h1 {
+    font-size: 1.2rem;
+}
+
+.assistant-message .message-bubble h2 {
+    font-size: 1.12rem;
+}
+
+.assistant-message .message-bubble ul,
+.assistant-message .message-bubble ol {
+    padding-left: 24px;
+}
+
+.assistant-message .message-bubble li + li {
+    margin-top: 4px;
+}
+
+.assistant-message .message-bubble code {
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: var(--surface-muted);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.9em;
+}
+
+.assistant-message .message-bubble pre {
+    max-width: 100%;
+    padding: 13px 15px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface-muted);
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.assistant-message .message-bubble pre code {
+    padding: 0;
+    background: transparent;
+    font-size: 12px;
+}
+
+.markdown-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.assistant-message .message-bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.assistant-message .message-bubble th,
+.assistant-message .message-bubble td {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.assistant-message .message-bubble th {
+    background: var(--surface-muted);
+    font-weight: 650;
 }
 
 .loading-message .message-bubble {

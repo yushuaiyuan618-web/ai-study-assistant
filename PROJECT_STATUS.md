@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 5 multi-turn conversation context implemented
+AI response quality and reliability improvements implemented
 
 ## Completed
 - Git repository initialized
@@ -27,12 +27,17 @@ Step 5 multi-turn conversation context implemented
 - Frontend sends previous completed messages with each new chat request
 - Ollama receives the latest 12 history messages plus the current message
 - English and Simplified Chinese contextual follow-ups verified with Qwen3.5 4B
+- Model input is limited to 3,000 characters while preserving recent context
+- Default AI instructions now favor direct, concise answers and simple Unicode notation
+- Empty Ollama responses retry once without duplicating the user message
+- Ollama connection, model, timeout, empty-response, and generation errors are distinguished
+- Assistant Markdown is rendered safely without a frontend dependency
 
 ## In Progress
 - None
 
 ## Next Step
-- Review and manually verify the Step 5 browser interaction before starting Step 6
+- Manually inspect Markdown layout in the browser, then review these changes
 
 ## Important Decisions
 - Development will be incremental.
@@ -48,9 +53,11 @@ Step 5 multi-turn conversation context implemented
 - The frontend and `/api/chat` contract remain independent of the AI provider.
 - Conversation memory exists only in the current browser page session.
 - Only successful user and assistant messages become conversation context.
-- Model context is capped at the latest 12 messages without token counting or summarization.
+- Model context is capped at the latest 12 messages and 3,000 input characters without tokenizer dependencies.
 - Conversation history is not stored in a database, server session, or browser storage.
+- The backend retries only empty model output and reuses the same non-duplicated model input.
+- Frontend Markdown rendering uses DOM text nodes instead of injecting model-generated HTML.
 
 ## Known Issues
-- Automated browser interaction was unavailable during Step 5 testing, so the visible send, loading, and error flows still need a brief manual check.
+- Automated browser interaction was unavailable, so the rendered Markdown spacing and table overflow still need a brief manual visual check.
 - The first Ollama request after a cold model start can be slow; one cold test reached the existing friendly unavailable response before later live tests succeeded.

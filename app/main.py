@@ -5,7 +5,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app.ai_service import AIConfigurationError, AIServiceError, generate_reply
+from app.ai_service import (
+    AIConfigurationError,
+    AIConnectionError,
+    AIEmptyResponseError,
+    AIModelNotFoundError,
+    AIRequestTimeoutError,
+    AIServiceError,
+    generate_reply,
+)
 
 
 app = FastAPI(title="AI Study Assistant")
@@ -45,12 +53,32 @@ def chat(chat_request: ChatRequest):
     except AIConfigurationError as error:
         raise HTTPException(
             status_code=503,
-            detail="The AI service is not configured correctly.",
+            detail="ai_configuration_error",
+        ) from error
+    except AIConnectionError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="ollama_unavailable",
+        ) from error
+    except AIModelNotFoundError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="model_not_found",
+        ) from error
+    except AIRequestTimeoutError as error:
+        raise HTTPException(
+            status_code=504,
+            detail="ai_request_timeout",
+        ) from error
+    except AIEmptyResponseError as error:
+        raise HTTPException(
+            status_code=502,
+            detail="empty_ai_response",
         ) from error
     except AIServiceError as error:
         raise HTTPException(
-            status_code=503,
-            detail="Local AI is not available.",
+            status_code=502,
+            detail="ai_generation_error",
         ) from error
 
     return {"reply": reply}
