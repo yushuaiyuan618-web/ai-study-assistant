@@ -324,7 +324,10 @@ def _build_study_plan_instructions(
     level_instruction = STUDY_LEVEL_INSTRUCTIONS[level]
     language_instruction = _get_language_instruction(language)
     duration_instruction = (
-        "Build sensible progression across the full month."
+        "Build sensible progression across the full month. To keep the complete "
+        "30-day plan reliable and easy to scan, use exactly 2 concise tasks per day. "
+        "Keep each focus, task, and outcome to one short sentence, and keep the title "
+        "and overview brief."
         if duration_days == 30
         else "Build a focused progression across the week."
     )

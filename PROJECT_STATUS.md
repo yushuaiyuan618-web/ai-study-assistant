@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 10 local document RAG implemented
+Step 11 product polish and robustness pass implemented
 
 ## Completed
 - Git repository initialized
@@ -87,12 +87,24 @@ Step 10 local document RAG implemented
 - Real local RAG checks passed for TXT, Markdown, PDF, multiple documents, bilingual retrieval, grounding, prompt injection resistance, sources, and cleanup
 - The viewport-bound application shell keeps the desktop sidebar visible while each main view scrolls independently
 - Existing Chat context, Explain, Quiz, and Study Plan passed live regression checks after the Step 10 changes
+- All modes now share consolidated textarea, segmented-control, primary-action, and secondary-action styling
+- A compact bilingual mode selector keeps Chat, Explain, Quiz, Study Plan, and Documents accessible below 720px
+- Desktop uses a stable sidebar/header and one active-view scroll region; mobile retains the same contained scrolling model
+- Long quiz answers, study-plan content, filenames, metadata, and RAG sources wrap safely on narrow screens
+- Explain and Quiz now show restrained bilingual inline validation for blank topics
+- Documents now has a bilingual no-files empty state and lighter answer/source separation
+- Chat auto-scroll waits for the browser layout pass so newly rendered messages remain reachable
+- Focus visibility, semantic labels, native keyboard controls, disabled states, and mobile navigation were audited
+- Repeated form, selector, and action CSS was consolidated; one unused translation and one dead selector were removed
+- Thirty-day plans now request compact output so validated monthly JSON fits the local Ollama 4K context reliably
+- Real local regressions passed for Chat context, Explain, Quiz scoring, a 30-day plan, TXT/PDF/MD indexing, bilingual RAG, sources, insufficient-context handling, and removal
+- Steps 1–10 and the zero-cost Ollama, local embedding, and local retrieval architecture remain preserved
 
 ## In Progress
 - None
 
 ## Next Step
-- Manually verify the Step 10 Documents question-answering interface, then review the uncommitted changes before starting Step 11
+- Manually complete the Step 11 cross-breakpoint visual checklist, then review the uncommitted changes before starting Step 12
 
 ## Important Decisions
 - Development will be incremental.
@@ -137,13 +149,15 @@ Step 10 local document RAG implemented
 - RAG uses `RAG_TOP_K=4` by default and a conservative similarity threshold to avoid unsupported answers.
 - Only retrieved chunks, not complete documents or normal Chat history, are sent to Qwen for each Documents question.
 - Documents questions are one-shot and remain isolated from AI Chat, Explain, Quiz, and Study Plan state.
+- Mobile navigation uses the existing view-switching function through a native select instead of adding a drawer or framework.
+- All main modes share one active-view scrolling rule while the document root, app shell, sidebar, and main column remain non-scrolling.
+- New Quiz and Create New Plan are secondary actions; generation, submission, upload, and document questions remain primary actions.
+- Compact 30-day generation changes output length only; the existing schema, validation, level, duration, and time-budget behavior remain unchanged.
 
 ## Known Issues
-- Automated browser interaction was unavailable, so Study Plan navigation, controls, generated layout, language switching, reset behavior, and responsive styling need a brief manual visual check.
-- Automated browser interaction was unavailable, so Documents navigation, upload styling, bilingual labels, preview scrolling, and removal need a brief manual visual check.
-- Automated browser interaction was unavailable, so document selection, question submission, sources, bilingual labels, loading/error states, and responsive Step 10 styling need a brief manual visual check.
+- Automated browser interaction was unavailable, so Step 11 desktop/tablet/mobile visual appearance, scrolling, and keyboard focus order need final manual confirmation.
 - Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
-- Local 30-day Study Plan generation took roughly 95 seconds in warm-model tests and may be slower after a cold start.
+- Local 30-day Study Plan generation took roughly 60 seconds in the latest warm-model test and may be slower after a cold start.
 - Unfinished quizzes are intentionally lost when the FastAPI process restarts.
 - Generated study plans are intentionally lost when the page is refreshed.
 - Uploaded documents are intentionally lost when the FastAPI process restarts.

@@ -174,6 +174,24 @@ button {
     font-size: 14px;
 }
 
+.header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 16px;
+}
+
+.mobile-view-select {
+    display: none;
+    min-width: 0;
+    padding: 8px 32px 8px 10px;
+    border: 1px solid #dcdce0;
+    border-radius: 9px;
+    color: var(--text);
+    background: var(--surface);
+    font-size: 13px;
+}
+
 .language-switcher {
     display: inline-flex;
     flex-shrink: 0;
@@ -204,6 +222,7 @@ button {
 }
 
 .language-button:focus-visible,
+.mobile-view-select:focus-visible,
 .nav-item:focus-visible,
 .send-button:focus-visible,
 .explain-style-option:focus-visible,
@@ -234,6 +253,8 @@ button {
     flex: 1 1 auto;
     overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .chat-area {
@@ -491,13 +512,15 @@ button {
     font-weight: 600;
 }
 
-.explain-form textarea {
+.explain-form textarea,
+.quiz-setup-form textarea,
+.study-plan-form textarea,
+.document-ask-form textarea {
     width: 100%;
-    min-height: 116px;
     padding: 14px 15px;
     resize: vertical;
     border: 1px solid #dcdce0;
-    border-radius: 11px;
+    border-radius: 10px;
     outline: 0;
     color: var(--text);
     background: var(--surface);
@@ -505,13 +528,23 @@ button {
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.explain-form textarea:focus {
+.explain-form textarea:focus,
+.quiz-setup-form textarea:focus,
+.study-plan-form textarea:focus,
+.document-ask-form textarea:focus {
     border-color: #b9b9bf;
     box-shadow: 0 1px 4px rgba(25, 25, 28, 0.08);
 }
 
-.explain-form textarea::placeholder {
+.explain-form textarea::placeholder,
+.quiz-setup-form textarea::placeholder,
+.study-plan-form textarea::placeholder,
+.document-ask-form textarea::placeholder {
     color: #999ca8;
+}
+
+.explain-form textarea {
+    min-height: 116px;
 }
 
 .explain-style-fieldset {
@@ -531,7 +564,9 @@ button {
     gap: 7px;
 }
 
-.explain-style-option {
+.explain-style-option,
+.quiz-difficulty-option,
+.study-plan-option {
     padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -542,21 +577,29 @@ button {
     transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
 }
 
-.explain-style-option:hover {
+.explain-style-option:hover,
+.quiz-difficulty-option:hover,
+.study-plan-option:hover {
     color: var(--text);
     border-color: #d2d2d7;
 }
 
-.explain-style-option.active {
+.explain-style-option.active,
+.quiz-difficulty-option.active,
+.study-plan-option.active {
     color: var(--accent);
     border-color: #cbc8df;
     background: #f6f5fa;
     font-weight: 600;
 }
 
-.explain-submit-button {
+.explain-submit-button,
+.quiz-generate-button,
+.quiz-submit-button,
+.study-plan-generate-button,
+.document-upload-button,
+.document-ask-button {
     width: fit-content;
-    margin-top: 6px;
     padding: 10px 17px;
     border: 0;
     border-radius: 9px;
@@ -567,14 +610,41 @@ button {
     cursor: pointer;
 }
 
-.explain-submit-button:hover {
+.explain-submit-button,
+.quiz-generate-button,
+.study-plan-generate-button {
+    margin-top: 6px;
+}
+
+.explain-submit-button:hover,
+.quiz-generate-button:hover,
+.quiz-submit-button:hover,
+.study-plan-generate-button:hover,
+.document-upload-button:hover,
+.document-ask-button:hover {
     filter: brightness(0.9);
 }
 
-.explain-submit-button:disabled {
+.explain-submit-button:disabled,
+.quiz-generate-button:disabled,
+.quiz-submit-button:disabled,
+.study-plan-generate-button:disabled,
+.document-upload-button:disabled,
+.document-ask-button:disabled {
     cursor: default;
     opacity: 0.55;
     filter: none;
+}
+
+.explain-message {
+    margin: 18px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.explain-message.error {
+    color: #8a4545;
 }
 
 .explain-result {
@@ -645,26 +715,7 @@ button {
 }
 
 .quiz-setup-form textarea {
-    width: 100%;
     min-height: 96px;
-    padding: 14px 15px;
-    resize: vertical;
-    border: 1px solid #dcdce0;
-    border-radius: 11px;
-    outline: 0;
-    color: var(--text);
-    background: var(--surface);
-    line-height: 1.55;
-    transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.quiz-setup-form textarea:focus {
-    border-color: #b9b9bf;
-    box-shadow: 0 1px 4px rgba(25, 25, 28, 0.08);
-}
-
-.quiz-setup-form textarea::placeholder {
-    color: #999ca8;
 }
 
 .quiz-difficulty-fieldset,
@@ -683,60 +734,6 @@ button {
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
-}
-
-.quiz-difficulty-option {
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-muted);
-    background: var(--surface);
-    font-size: 13px;
-    cursor: pointer;
-    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
-}
-
-.quiz-difficulty-option:hover {
-    color: var(--text);
-    border-color: #d2d2d7;
-}
-
-.quiz-difficulty-option.active {
-    color: var(--accent);
-    border-color: #cbc8df;
-    background: #f6f5fa;
-    font-weight: 600;
-}
-
-.quiz-generate-button,
-.quiz-submit-button,
-.quiz-new-button {
-    width: fit-content;
-    padding: 10px 17px;
-    border: 0;
-    border-radius: 9px;
-    color: #ffffff;
-    background: var(--accent);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.quiz-generate-button {
-    margin-top: 6px;
-}
-
-.quiz-generate-button:hover,
-.quiz-submit-button:hover,
-.quiz-new-button:hover {
-    filter: brightness(0.9);
-}
-
-.quiz-generate-button:disabled,
-.quiz-submit-button:disabled {
-    cursor: default;
-    opacity: 0.55;
-    filter: none;
 }
 
 .quiz-message {
@@ -811,6 +808,11 @@ button {
     accent-color: var(--accent);
 }
 
+.quiz-option span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .quiz-option input:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -876,8 +878,25 @@ button {
     font-weight: 600;
 }
 
-.quiz-new-button {
+.quiz-new-button,
+.study-plan-new-button {
+    width: fit-content;
     margin-top: 30px;
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.quiz-new-button:hover,
+.study-plan-new-button:hover {
+    border-color: #d2d2d7;
+    background: var(--surface-muted);
 }
 
 .study-plan-container {
@@ -921,27 +940,12 @@ button {
 }
 
 .study-plan-form textarea {
-    width: 100%;
     min-height: 108px;
-    padding: 14px 15px;
-    resize: vertical;
-    border: 1px solid #dcdce0;
-    border-radius: 11px;
-    outline: 0;
-    color: var(--text);
-    background: var(--surface);
-    line-height: 1.55;
-    transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.study-plan-form textarea:focus,
 .study-plan-time-input:focus-within {
     border-color: #b9b9bf;
     box-shadow: 0 1px 4px rgba(25, 25, 28, 0.08);
-}
-
-.study-plan-form textarea::placeholder {
-    color: #999ca8;
 }
 
 .study-plan-fieldset {
@@ -959,29 +963,6 @@ button {
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
-}
-
-.study-plan-option {
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-muted);
-    background: var(--surface);
-    font-size: 13px;
-    cursor: pointer;
-    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
-}
-
-.study-plan-option:hover {
-    color: var(--text);
-    border-color: #d2d2d7;
-}
-
-.study-plan-option.active {
-    color: var(--accent);
-    border-color: #cbc8df;
-    background: #f6f5fa;
-    font-weight: 600;
 }
 
 .study-plan-time-input {
@@ -1008,34 +989,6 @@ button {
     padding-right: 12px;
     color: var(--text-muted);
     font-size: 13px;
-}
-
-.study-plan-generate-button,
-.study-plan-new-button {
-    width: fit-content;
-    padding: 10px 17px;
-    border: 0;
-    border-radius: 9px;
-    color: #ffffff;
-    background: var(--accent);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.study-plan-generate-button {
-    margin-top: 6px;
-}
-
-.study-plan-generate-button:hover,
-.study-plan-new-button:hover {
-    filter: brightness(0.9);
-}
-
-.study-plan-generate-button:disabled {
-    cursor: default;
-    opacity: 0.55;
-    filter: none;
 }
 
 .study-plan-message {
@@ -1102,6 +1055,7 @@ button {
     font-size: 17px;
     font-weight: 600;
     line-height: 1.45;
+    overflow-wrap: anywhere;
 }
 
 .study-plan-day-label {
@@ -1117,6 +1071,7 @@ button {
     color: var(--text);
     font-size: 14px;
     line-height: 1.55;
+    overflow-wrap: anywhere;
 }
 
 .study-plan-day li + li {
@@ -1133,10 +1088,6 @@ button {
 .study-plan-day-detail strong {
     color: var(--text);
     font-weight: 600;
-}
-
-.study-plan-new-button {
-    margin-top: 30px;
 }
 
 .documents-container {
@@ -1173,6 +1124,10 @@ button {
     background: var(--surface);
 }
 
+.document-upload-panel > * {
+    min-width: 0;
+}
+
 .document-upload-panel h3 {
     margin: 0 0 6px;
     font-size: 15px;
@@ -1195,6 +1150,7 @@ button {
 
 .document-input {
     width: 100%;
+    min-width: 0;
     color: var(--text-muted);
     font-size: 13px;
 }
@@ -1211,7 +1167,6 @@ button {
     cursor: pointer;
 }
 
-.document-upload-button,
 .document-remove-button {
     width: fit-content;
     border-radius: 8px;
@@ -1222,17 +1177,8 @@ button {
 
 .document-upload-button {
     margin-top: 3px;
-    padding: 10px 17px;
-    border: 0;
-    color: #ffffff;
-    background: var(--accent);
 }
 
-.document-upload-button:hover {
-    filter: brightness(0.9);
-}
-
-.document-upload-button:disabled,
 .document-remove-button:disabled {
     cursor: default;
     opacity: 0.55;
@@ -1248,6 +1194,16 @@ button {
 
 .document-message.error {
     color: #8a4545;
+}
+
+.document-empty-state {
+    margin: 32px 0 0;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
 }
 
 .document-list-section {
@@ -1286,6 +1242,7 @@ button {
 
 .document-title-group {
     display: grid;
+    min-width: 0;
     gap: 9px;
 }
 
@@ -1341,6 +1298,7 @@ button {
     margin: 0;
     font-size: 13px;
     font-weight: 550;
+    overflow-wrap: anywhere;
 }
 
 .document-item h5 {
@@ -1392,48 +1350,7 @@ button {
 }
 
 .document-ask-form textarea {
-    width: 100%;
     min-height: 96px;
-    padding: 13px 14px;
-    resize: vertical;
-    border: 1px solid #dcdce0;
-    border-radius: 10px;
-    outline: 0;
-    color: var(--text);
-    background: var(--surface);
-    line-height: 1.55;
-    transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.document-ask-form textarea:focus {
-    border-color: #b9b9bf;
-    box-shadow: 0 1px 4px rgba(25, 25, 28, 0.08);
-}
-
-.document-ask-form textarea::placeholder {
-    color: #999ca8;
-}
-
-.document-ask-button {
-    width: fit-content;
-    padding: 10px 17px;
-    border: 0;
-    border-radius: 9px;
-    color: #ffffff;
-    background: var(--accent);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.document-ask-button:hover {
-    filter: brightness(0.9);
-}
-
-.document-ask-button:disabled {
-    cursor: default;
-    opacity: 0.55;
-    filter: none;
 }
 
 .document-ask-message {
@@ -1469,7 +1386,6 @@ button {
     margin-top: 25px;
 }
 
-.document-source-list,
 .document-sources ol {
     margin: 0;
     padding-left: 22px;
@@ -1483,6 +1399,7 @@ button {
     margin: 0;
     font-size: 13px;
     line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 
 .document-source-snippet {
@@ -1596,7 +1513,35 @@ button {
     }
 
     .main-header {
+        align-items: center;
+        gap: 14px;
         padding: 20px 20px 17px;
+    }
+
+    .main-header h1 {
+        margin-bottom: 0;
+        font-size: 18px;
+    }
+
+    .header-copy p {
+        display: none;
+    }
+
+    .header-actions {
+        gap: 10px;
+    }
+
+    .mobile-view-select {
+        display: block;
+        width: 148px;
+    }
+
+    .chat-area,
+    .explain-view,
+    .quiz-view,
+    .study-plan-view,
+    .documents-view {
+        scrollbar-gutter: auto;
     }
 
     .welcome-section {
@@ -1629,6 +1574,19 @@ button {
 }
 
 @media (max-width: 520px) {
+    .header-copy {
+        display: none;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .mobile-view-select {
+        width: min(190px, calc(100% - 74px));
+    }
+
     .suggestion-grid {
         grid-template-columns: 1fr;
     }

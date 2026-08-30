@@ -7,11 +7,13 @@ const chatInputArea = document.querySelector("#chatInputArea");
 const sendButton = document.querySelector(".send-button");
 const languageButtons = document.querySelectorAll("[data-language]");
 const viewButtons = document.querySelectorAll("[data-view]");
+const mobileViewSelect = document.querySelector("#mobileViewSelect");
 const explainView = document.querySelector("#explainView");
 const explainForm = document.querySelector("#explainForm");
 const explainTopic = document.querySelector("#explainTopic");
 const explainStyleButtons = document.querySelectorAll("[data-explain-style]");
 const explainSubmitButton = document.querySelector(".explain-submit-button");
+const explainMessage = document.querySelector("#explainMessage");
 const explainResult = document.querySelector("#explainResult");
 const explainOutput = document.querySelector("#explainOutput");
 const quizView = document.querySelector("#quizView");
@@ -54,6 +56,7 @@ const documentUploadForm = document.querySelector("#documentUploadForm");
 const documentInput = document.querySelector("#documentInput");
 const documentUploadButton = document.querySelector(".document-upload-button");
 const documentMessage = document.querySelector("#documentMessage");
+const documentEmptyState = document.querySelector("#documentEmptyState");
 const documentListSection = document.querySelector("#documentListSection");
 const documentList = document.querySelector("#documentList");
 const documentAskForm = document.querySelector("#documentAskForm");
@@ -70,6 +73,7 @@ const translations = {
         pageTitle: "AI Study Assistant",
         appName: "AI Study Assistant",
         mainNavigation: "Main navigation",
+        mobileNavigationLabel: "Choose mode",
         aiChat: "AI Chat",
         explain: "Explain",
         quiz: "Quiz",
@@ -98,6 +102,7 @@ const translations = {
         explainStyleExample: "With Example",
         explainSubmit: "Explain",
         explaining: "Explaining...",
+        explainTopicRequired: "Enter a topic or question to explain.",
         explainError: "Unable to generate an explanation right now. Please try again.",
         quizViewTitle: "Test Your Understanding",
         quizViewSubtitle: "Generate a short AI quiz on any topic.",
@@ -109,6 +114,7 @@ const translations = {
         quizDifficultyHard: "Hard",
         quizGenerate: "Generate Quiz",
         quizGenerating: "Generating quiz...",
+        quizTopicRequired: "Enter a topic before generating a quiz.",
         quizGenerateError: "Unable to generate a quiz right now. Please try again.",
         quizQuestionsTitle: "Quiz",
         quizQuestion: "Question",
@@ -155,7 +161,6 @@ const translations = {
         documentChooseFile: "Choose File",
         documentSizeLimit: "Maximum file size: 10 MB",
         documentUploadAction: "Upload",
-        documentUploading: "Uploading...",
         documentPreparing: "Preparing document for AI...",
         documentNoFile: "Choose a PDF, TXT, or Markdown file.",
         documentTooLarge: "File is too large. Maximum size is 10 MB.",
@@ -168,6 +173,7 @@ const translations = {
         documentLimitReached: "You can keep up to 10 temporary documents.",
         documentProcessingError: "Unable to process this document right now. Please try again.",
         documentNotFound: "This document is no longer available.",
+        documentEmptyState: "No documents uploaded yet. Upload a file to start asking questions.",
         documentListTitle: "Uploaded Documents",
         documentType: "Type",
         documentSize: "Size",
@@ -215,6 +221,7 @@ const translations = {
         pageTitle: "AI 学习助手",
         appName: "AI 学习助手",
         mainNavigation: "主导航",
+        mobileNavigationLabel: "选择功能",
         aiChat: "AI 对话",
         explain: "知识讲解",
         quiz: "AI 测验",
@@ -243,6 +250,7 @@ const translations = {
         explainStyleExample: "举例讲解",
         explainSubmit: "开始讲解",
         explaining: "正在讲解...",
+        explainTopicRequired: "请输入需要讲解的知识点或问题。",
         explainError: "暂时无法生成讲解，请稍后再试。",
         quizViewTitle: "测试你的理解",
         quizViewSubtitle: "针对任意知识点生成一个 AI 小测验。",
@@ -254,6 +262,7 @@ const translations = {
         quizDifficultyHard: "困难",
         quizGenerate: "生成测验",
         quizGenerating: "正在生成测验...",
+        quizTopicRequired: "请先输入要练习的知识点。",
         quizGenerateError: "暂时无法生成测验，请稍后再试。",
         quizQuestionsTitle: "测验",
         quizQuestion: "第",
@@ -300,7 +309,6 @@ const translations = {
         documentChooseFile: "选择文件",
         documentSizeLimit: "最大文件大小：10 MB",
         documentUploadAction: "上传",
-        documentUploading: "正在上传...",
         documentPreparing: "正在为 AI 准备资料...",
         documentNoFile: "请选择 PDF、TXT 或 Markdown 文件。",
         documentTooLarge: "文件过大，最大支持 10 MB。",
@@ -313,6 +321,7 @@ const translations = {
         documentLimitReached: "最多可暂存 10 份学习资料。",
         documentProcessingError: "暂时无法处理该文档，请稍后再试。",
         documentNotFound: "该文档已不存在。",
+        documentEmptyState: "还没有上传学习资料。上传文件后即可开始提问。",
         documentListTitle: "已上传资料",
         documentType: "类型",
         documentSize: "大小",
@@ -544,7 +553,9 @@ function resizeMessageInput() {
 }
 
 function scrollChatToBottom() {
-    chatArea.scrollTop = chatArea.scrollHeight;
+    window.requestAnimationFrame(() => {
+        chatArea.scrollTop = chatArea.scrollHeight;
+    });
 }
 
 function setSendingState(sending) {
@@ -566,6 +577,7 @@ function setActiveView(view) {
     quizView.hidden = !isQuizView;
     studyPlanView.hidden = !isStudyPlanView;
     documentsView.hidden = !isDocumentsView;
+    mobileViewSelect.value = view;
 
     viewButtons.forEach((button) => {
         const isActive = button.dataset.view === view;
@@ -610,6 +622,20 @@ function setExplainingState(explaining) {
     explainStyleButtons.forEach((button) => {
         button.disabled = explaining;
     });
+}
+
+function showExplainMessage(translationKey, state = "") {
+    explainMessage.hidden = false;
+    explainMessage.className = `explain-message${state ? ` ${state}` : ""}`;
+    explainMessage.dataset.i18n = translationKey;
+    explainMessage.textContent = translations[currentLanguage][translationKey];
+}
+
+function clearExplainMessage() {
+    explainMessage.hidden = true;
+    explainMessage.className = "explain-message";
+    explainMessage.textContent = "";
+    delete explainMessage.dataset.i18n;
 }
 
 function displayExplainOutput(message, state = "", translationKey = "") {
@@ -938,14 +964,19 @@ async function sendMessage() {
 async function requestExplanation() {
     const topic = explainTopic.value.trim();
 
-    if (!topic || isExplaining) {
+    if (!topic) {
+        showExplainMessage("explainTopicRequired", "error");
         explainTopic.focus();
+        return;
+    }
+    if (isExplaining) {
         return;
     }
 
     const requestLanguage = currentLanguage;
     const requestStyle = selectedExplainStyle;
 
+    clearExplainMessage();
     setExplainingState(true);
     displayExplainOutput(
         translations[requestLanguage].explaining,
@@ -1094,8 +1125,12 @@ function renderQuizQuestions() {
 async function generateQuizRequest() {
     const topic = quizTopic.value.trim();
 
-    if (!topic || isGeneratingQuiz) {
+    if (!topic) {
+        showQuizMessage(quizSetupMessage, "quizTopicRequired", "error");
         quizTopic.focus();
+        return;
+    }
+    if (isGeneratingQuiz) {
         return;
     }
 
@@ -1496,6 +1531,12 @@ function clearDocumentMessage() {
     delete documentMessage.dataset.i18n;
 }
 
+function updateDocumentEmptyState() {
+    const hasDocuments = uploadedDocuments.length > 0;
+    documentEmptyState.hidden = hasDocuments;
+    documentListSection.hidden = !hasDocuments;
+}
+
 function setDocumentUploadingState(uploading) {
     isUploadingDocument = uploading;
     documentInput.disabled = uploading;
@@ -1555,7 +1596,7 @@ function renderDocumentAnswer(answerData) {
         const sourceItem = document.createElement("li");
         const sourceHeading = document.createElement("p");
         const filename = document.createElement("strong");
-        const separator = document.createTextNode(" — ");
+        const separator = document.createTextNode(" · ");
         const location = document.createElement("span");
         const snippet = document.createElement("p");
 
@@ -1722,7 +1763,7 @@ async function removeDocumentRequest(documentData, documentCard, removeButton) {
         }
         selectedDocumentIds.delete(documentData.document_id);
         documentCard.remove();
-        documentListSection.hidden = uploadedDocuments.length === 0;
+        updateDocumentEmptyState();
         clearDocumentAnswer();
         clearDocumentAskMessage();
         clearDocumentMessage();
@@ -1807,7 +1848,7 @@ function renderDocument(documentData) {
 
     documentCard.append(header, metadata, previewHeading, preview);
     documentList.appendChild(documentCard);
-    documentListSection.hidden = false;
+    updateDocumentEmptyState();
 }
 
 async function uploadDocumentRequest() {
@@ -1912,6 +1953,8 @@ quizNewButton.addEventListener("click", resetQuiz);
 studyPlanNewButton.addEventListener("click", resetStudyPlan);
 
 documentInput.addEventListener("change", clearDocumentMessage);
+explainTopic.addEventListener("input", clearExplainMessage);
+quizTopic.addEventListener("input", () => clearQuizMessage(quizSetupMessage));
 
 documentQuestion.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -1935,6 +1978,10 @@ languageButtons.forEach((button) => {
     button.addEventListener("click", () => {
         applyLanguage(button.dataset.language);
     });
+});
+
+mobileViewSelect.addEventListener("change", () => {
+    setActiveView(mobileViewSelect.value);
 });
 
 viewButtons.forEach((button) => {
@@ -1968,3 +2015,4 @@ studyDurationButtons.forEach((button) => {
 });
 
 applyLanguage(currentLanguage);
+updateDocumentEmptyState();

@@ -62,10 +62,23 @@
                     <p data-i18n="subtitle">Learn smarter with your personal AI tutor.</p>
                 </div>
 
-                <div class="language-switcher" role="group" aria-label="Language selection" data-i18n-aria-label="languageSelection">
-                    <button class="language-button active" type="button" data-language="en" aria-pressed="true">EN</button>
-                    <span aria-hidden="true">/</span>
-                    <button class="language-button" type="button" data-language="zh" aria-pressed="false">中文</button>
+                <div class="header-actions">
+                    <label class="visually-hidden" for="mobileViewSelect" data-i18n="mobileNavigationLabel">
+                        Choose mode
+                    </label>
+                    <select class="mobile-view-select" id="mobileViewSelect">
+                        <option value="chat" data-i18n="aiChat">AI Chat</option>
+                        <option value="explain" data-i18n="explain">Explain</option>
+                        <option value="quiz" data-i18n="quiz">Quiz</option>
+                        <option value="study-plan" data-i18n="studyPlan">Study Plan</option>
+                        <option value="documents" data-i18n="documents">Documents</option>
+                    </select>
+
+                    <div class="language-switcher" role="group" aria-label="Language selection" data-i18n-aria-label="languageSelection">
+                        <button class="language-button active" type="button" data-language="en" aria-pressed="true">EN</button>
+                        <span aria-hidden="true">/</span>
+                        <button class="language-button" type="button" data-language="zh" aria-pressed="false">中文</button>
+                    </div>
                 </div>
             </header>
 
@@ -157,6 +170,8 @@
                             Explain
                         </button>
                     </form>
+
+                    <p class="explain-message" id="explainMessage" aria-live="polite" hidden></p>
 
                     <div class="explain-result" id="explainResult" aria-live="polite" hidden>
                         <div class="explain-output" id="explainOutput"></div>
@@ -423,6 +438,10 @@
                     </form>
 
                     <p class="document-message" id="documentMessage" aria-live="polite" hidden></p>
+
+                    <p class="document-empty-state" id="documentEmptyState" data-i18n="documentEmptyState">
+                        No documents uploaded yet. Upload a file to start asking questions.
+                    </p>
 
                     <section class="document-list-section" id="documentListSection" hidden>
                         <h3 data-i18n="documentListTitle">Uploaded Documents</h3>
