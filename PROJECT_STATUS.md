@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 7 AI Quiz mode implemented
+Step 8 AI Study Plan mode implemented
 
 ## Completed
 - Git repository initialized
@@ -49,12 +49,23 @@ Step 7 AI Quiz mode implemented
 - Quiz state remains separate from Chat conversation history and Explain state
 - English Easy, Medium, Hard and Simplified Chinese quiz generation verified with Qwen3.5 4B
 - Existing multi-turn Chat and Explain endpoints passed live regression checks
+- Dedicated bilingual Study Plan view added with learning goal, level, daily time, and duration controls
+- Study Plan supports Beginner / Intermediate / Advanced and 7-day / 30-day plans
+- `/api/study-plan` validates goals, levels, 15–480 daily minutes, durations, and language
+- Local Qwen generates structured plan titles, overviews, and exactly 7 or 30 ordered daily entries
+- Study Plan JSON reuses the Quiz JSON Schema flow and is validated with Pydantic before use
+- Each validated day contains a focus, 2–5 tasks, an in-budget time estimate, and a daily outcome
+- Study Plan loading, inline validation, failure, result, and Create New Plan states added
+- Study Plan state remains separate from Chat, Explain, and Quiz state
+- English and Simplified Chinese 7-day and 30-day plans verified with local Qwen3.5 4B
+- Beginner and advanced plan behavior and daily time-budget behavior verified with local Qwen3.5 4B
+- Health, static frontend, Study Plan API, Chat context, Explain, Quiz generation, and scoring passed HTTP regression checks
 
 ## In Progress
 - None
 
 ## Next Step
-- Manually verify the Step 7 Quiz interface in a browser, then review these changes before Step 8
+- Manually verify the Step 8 interface in a browser, then review the uncommitted changes before starting Step 9
 
 ## Important Decisions
 - Development will be incremental.
@@ -82,8 +93,14 @@ Step 7 AI Quiz mode implemented
 - Quiz sessions use a small process-memory dictionary; server restarts invalidate unfinished quizzes.
 - Correct answers and explanations remain backend-only until the quiz is submitted.
 - Multiple-choice scoring is deterministic Python logic and does not make a second AI request.
+- Study Plan generation reuses the Quiz structured-output helper instead of adding another Ollama client.
+- Study Plan prompts and validation enforce the selected level, exact duration, and daily time ceiling.
+- Generated study plans exist only in the current page session and are not persisted.
+- Study Plan rendering uses DOM text content and never injects AI-generated HTML.
 
 ## Known Issues
-- Automated browser interaction was unavailable, so Quiz layout, navigation, selection styling, results, and responsive behavior need a brief manual visual check.
+- Automated browser interaction was unavailable, so Study Plan navigation, controls, generated layout, language switching, reset behavior, and responsive styling need a brief manual visual check.
 - Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
+- Local 30-day Study Plan generation took roughly 95 seconds in warm-model tests and may be slower after a cold start.
 - Unfinished quizzes are intentionally lost when the FastAPI process restarts.
+- Generated study plans are intentionally lost when the page is refreshed.

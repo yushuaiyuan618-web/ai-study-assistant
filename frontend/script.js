@@ -32,6 +32,23 @@ const quizResultsState = document.querySelector("#quizResultsState");
 const quizScoreDisplay = document.querySelector("#quizScoreDisplay");
 const quizResultList = document.querySelector("#quizResultList");
 const quizNewButton = document.querySelector("#quizNewButton");
+const studyPlanView = document.querySelector("#studyPlanView");
+const studyPlanSetupState = document.querySelector("#studyPlanSetupState");
+const studyPlanForm = document.querySelector("#studyPlanForm");
+const studyPlanGoal = document.querySelector("#studyPlanGoal");
+const studyLevelButtons = document.querySelectorAll("[data-study-level]");
+const studyPlanDailyMinutes = document.querySelector("#studyPlanDailyMinutes");
+const studyDurationButtons = document.querySelectorAll("[data-study-duration]");
+const studyPlanGenerateButton = document.querySelector(".study-plan-generate-button");
+const studyPlanMessage = document.querySelector("#studyPlanMessage");
+const studyPlanResultState = document.querySelector("#studyPlanResultState");
+const studyPlanTitle = document.querySelector("#studyPlanTitle");
+const studyPlanOverview = document.querySelector("#studyPlanOverview");
+const studyPlanLevelDisplay = document.querySelector("#studyPlanLevelDisplay");
+const studyPlanTimeDisplay = document.querySelector("#studyPlanTimeDisplay");
+const studyPlanDurationDisplay = document.querySelector("#studyPlanDurationDisplay");
+const studyPlanDayList = document.querySelector("#studyPlanDayList");
+const studyPlanNewButton = document.querySelector("#studyPlanNewButton");
 
 const translations = {
     en: {
@@ -93,6 +110,29 @@ const translations = {
         quizCorrectAnswer: "Correct answer",
         quizExplanation: "Explanation",
         quizNew: "New Quiz",
+        studyPlanViewTitle: "Build Your Study Plan",
+        studyPlanViewSubtitle: "Turn your learning goal into a clear daily roadmap.",
+        studyPlanGoalLabel: "Learning Goal",
+        studyPlanGoalPlaceholder: "What do you want to learn or achieve?",
+        studyPlanLevelLabel: "Current Level",
+        studyPlanLevelBeginner: "Beginner",
+        studyPlanLevelIntermediate: "Intermediate",
+        studyPlanLevelAdvanced: "Advanced",
+        studyPlanTimeLabel: "Daily Study Time",
+        minutesShort: "min",
+        studyPlanDurationLabel: "Plan Duration",
+        studyPlanDurationSeven: "7 Days",
+        studyPlanDurationThirty: "30 Days",
+        studyPlanGenerate: "Generate Plan",
+        studyPlanBuilding: "Building your plan...",
+        studyPlanValidation: "Enter a learning goal and a daily study time from 15 to 480 minutes.",
+        studyPlanError: "Unable to generate a study plan right now. Please try again.",
+        studyPlanDay: "Day",
+        studyPlanDaySuffix: "",
+        studyPlanTasks: "Tasks",
+        studyPlanEstimatedTime: "Estimated time",
+        studyPlanDailyGoal: "Goal",
+        studyPlanNew: "Create New Plan",
         inputLabel: "Study question",
         inputPlaceholder: "Ask anything about your studies...",
         send: "Send",
@@ -166,6 +206,29 @@ const translations = {
         quizCorrectAnswer: "正确答案",
         quizExplanation: "讲解",
         quizNew: "重新测验",
+        studyPlanViewTitle: "制定学习计划",
+        studyPlanViewSubtitle: "把你的学习目标拆解成清晰的每日学习路线。",
+        studyPlanGoalLabel: "学习目标",
+        studyPlanGoalPlaceholder: "你想学习什么，或达到什么目标？",
+        studyPlanLevelLabel: "当前水平",
+        studyPlanLevelBeginner: "初学者",
+        studyPlanLevelIntermediate: "有一定基础",
+        studyPlanLevelAdvanced: "进阶",
+        studyPlanTimeLabel: "每天学习时间",
+        minutesShort: "分钟",
+        studyPlanDurationLabel: "计划时长",
+        studyPlanDurationSeven: "7 天",
+        studyPlanDurationThirty: "30 天",
+        studyPlanGenerate: "生成计划",
+        studyPlanBuilding: "正在生成学习计划...",
+        studyPlanValidation: "请输入学习目标，并将每天学习时间设置为 15 到 480 分钟。",
+        studyPlanError: "暂时无法生成学习计划，请稍后再试。",
+        studyPlanDay: "第",
+        studyPlanDaySuffix: "天",
+        studyPlanTasks: "任务",
+        studyPlanEstimatedTime: "预计时间",
+        studyPlanDailyGoal: "目标",
+        studyPlanNew: "重新制定计划",
         inputLabel: "学习问题",
         inputPlaceholder: "输入你的学习问题...",
         send: "发送",
@@ -200,6 +263,10 @@ let isGeneratingQuiz = false;
 let isSubmittingQuiz = false;
 let selectedQuizDifficulty = "medium";
 let currentQuiz = null;
+let isGeneratingStudyPlan = false;
+let selectedStudyLevel = "beginner";
+let selectedStudyDuration = 7;
+let currentStudyPlan = null;
 const conversationHistory = [];
 
 function applyLanguage(language) {
@@ -228,6 +295,7 @@ function applyLanguage(language) {
     });
 
     updateQuizLocalizedText();
+    updateStudyPlanLocalizedText();
 
     localStorage.setItem("studyAssistantLanguage", language);
 }
@@ -251,6 +319,36 @@ function updateQuizLocalizedText() {
     }
 }
 
+function formatStudyPlanDayNumber(number) {
+    const prefix = translations[currentLanguage].studyPlanDay;
+    const suffix = translations[currentLanguage].studyPlanDaySuffix;
+    return `${prefix} ${number}${suffix ? ` ${suffix}` : ""}`;
+}
+
+function updateStudyPlanLocalizedText() {
+    document.querySelectorAll("[data-study-day-number]").forEach((element) => {
+        element.textContent = formatStudyPlanDayNumber(element.dataset.studyDayNumber);
+    });
+
+    document.querySelectorAll("[data-study-minutes]").forEach((element) => {
+        element.textContent =
+            `: ${element.dataset.studyMinutes} ${translations[currentLanguage].minutesShort}`;
+    });
+
+    if (currentStudyPlan) {
+        const levelKey = `studyPlanLevel${
+            currentStudyPlan.level[0].toUpperCase() + currentStudyPlan.level.slice(1)
+        }`;
+        const durationKey = currentStudyPlan.durationDays === 30
+            ? "studyPlanDurationThirty"
+            : "studyPlanDurationSeven";
+        studyPlanLevelDisplay.textContent = translations[currentLanguage][levelKey];
+        studyPlanTimeDisplay.textContent =
+            `${currentStudyPlan.dailyMinutes} ${translations[currentLanguage].minutesShort}`;
+        studyPlanDurationDisplay.textContent = translations[currentLanguage][durationKey];
+    }
+}
+
 function resizeMessageInput() {
     messageInput.style.height = "auto";
     messageInput.style.height = `${Math.min(messageInput.scrollHeight, 160)}px`;
@@ -271,11 +369,13 @@ function setActiveView(view) {
     const isChatView = view === "chat";
     const isExplainView = view === "explain";
     const isQuizView = view === "quiz";
+    const isStudyPlanView = view === "study-plan";
 
     chatArea.hidden = !isChatView;
     chatInputArea.hidden = !isChatView;
     explainView.hidden = !isExplainView;
     quizView.hidden = !isQuizView;
+    studyPlanView.hidden = !isStudyPlanView;
 
     viewButtons.forEach((button) => {
         const isActive = button.dataset.view === view;
@@ -294,6 +394,8 @@ function setActiveView(view) {
         explainTopic.focus();
     } else if (isQuizView && !currentQuiz) {
         quizTopic.focus();
+    } else if (isStudyPlanView && !currentStudyPlan) {
+        studyPlanGoal.focus();
     }
 }
 
@@ -994,6 +1096,200 @@ async function submitQuizAnswers() {
     }
 }
 
+function selectStudyLevel(level) {
+    selectedStudyLevel = level;
+
+    studyLevelButtons.forEach((button) => {
+        const isActive = button.dataset.studyLevel === level;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive);
+    });
+}
+
+function selectStudyDuration(duration) {
+    selectedStudyDuration = Number(duration);
+
+    studyDurationButtons.forEach((button) => {
+        const isActive = Number(button.dataset.studyDuration) === selectedStudyDuration;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive);
+    });
+}
+
+function showStudyPlanMessage(translationKey, state = "") {
+    studyPlanMessage.hidden = false;
+    studyPlanMessage.className = `study-plan-message${state ? ` ${state}` : ""}`;
+    studyPlanMessage.dataset.i18n = translationKey;
+    studyPlanMessage.textContent = translations[currentLanguage][translationKey];
+}
+
+function clearStudyPlanMessage() {
+    studyPlanMessage.hidden = true;
+    studyPlanMessage.className = "study-plan-message";
+    studyPlanMessage.textContent = "";
+    delete studyPlanMessage.dataset.i18n;
+}
+
+function setStudyPlanGeneratingState(generating) {
+    isGeneratingStudyPlan = generating;
+    studyPlanGoal.disabled = generating;
+    studyPlanDailyMinutes.disabled = generating;
+    studyPlanGenerateButton.disabled = generating;
+    studyPlanForm.setAttribute("aria-busy", generating);
+
+    [...studyLevelButtons, ...studyDurationButtons].forEach((button) => {
+        button.disabled = generating;
+    });
+
+    const translationKey = generating ? "studyPlanBuilding" : "studyPlanGenerate";
+    studyPlanGenerateButton.dataset.i18n = translationKey;
+    studyPlanGenerateButton.textContent = translations[currentLanguage][translationKey];
+}
+
+function appendStudyPlanDetail(container, labelKey, value) {
+    const detail = document.createElement("p");
+    const label = document.createElement("strong");
+    const text = document.createElement("span");
+
+    detail.className = "study-plan-day-detail";
+    label.dataset.i18n = labelKey;
+    label.textContent = translations[currentLanguage][labelKey];
+    text.textContent = `: ${value}`;
+    detail.append(label, text);
+    container.appendChild(detail);
+    return text;
+}
+
+function renderStudyPlan() {
+    const plan = currentStudyPlan.plan;
+    studyPlanTitle.textContent = plan.title;
+    studyPlanOverview.textContent = plan.overview;
+    studyPlanDayList.textContent = "";
+    updateStudyPlanLocalizedText();
+
+    plan.days.forEach((studyDay) => {
+        const daySection = document.createElement("section");
+        const dayNumber = document.createElement("h3");
+        const focus = document.createElement("h4");
+        const tasksLabel = document.createElement("p");
+        const taskList = document.createElement("ul");
+
+        daySection.className = "study-plan-day";
+        dayNumber.dataset.studyDayNumber = studyDay.day;
+        dayNumber.textContent = formatStudyPlanDayNumber(studyDay.day);
+        focus.textContent = studyDay.focus;
+        tasksLabel.className = "study-plan-day-label";
+        tasksLabel.dataset.i18n = "studyPlanTasks";
+        tasksLabel.textContent = translations[currentLanguage].studyPlanTasks;
+
+        studyDay.tasks.forEach((task) => {
+            const taskItem = document.createElement("li");
+            taskItem.textContent = task;
+            taskList.appendChild(taskItem);
+        });
+
+        daySection.append(dayNumber, focus, tasksLabel, taskList);
+        const estimatedTime = appendStudyPlanDetail(
+            daySection,
+            "studyPlanEstimatedTime",
+            `${studyDay.estimated_minutes} ${translations[currentLanguage].minutesShort}`
+        );
+        estimatedTime.dataset.studyMinutes = studyDay.estimated_minutes;
+        appendStudyPlanDetail(daySection, "studyPlanDailyGoal", studyDay.goal);
+        studyPlanDayList.appendChild(daySection);
+    });
+
+    studyPlanSetupState.hidden = true;
+    studyPlanResultState.hidden = false;
+}
+
+async function generateStudyPlanRequest() {
+    const goal = studyPlanGoal.value.trim();
+    const dailyMinutes = Number(studyPlanDailyMinutes.value);
+    const isValidTime =
+        Number.isInteger(dailyMinutes) && dailyMinutes >= 15 && dailyMinutes <= 480;
+
+    if (!goal || !isValidTime) {
+        showStudyPlanMessage("studyPlanValidation", "error");
+        (goal ? studyPlanDailyMinutes : studyPlanGoal).focus();
+        return;
+    }
+
+    if (isGeneratingStudyPlan) {
+        return;
+    }
+
+    const requestLanguage = currentLanguage;
+    const requestLevel = selectedStudyLevel;
+    const requestDuration = selectedStudyDuration;
+    setStudyPlanGeneratingState(true);
+    showStudyPlanMessage("studyPlanBuilding", "loading");
+
+    try {
+        const response = await fetch("/api/study-plan", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                goal,
+                level: requestLevel,
+                daily_minutes: dailyMinutes,
+                duration_days: requestDuration,
+                language: requestLanguage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("The study plan request failed.");
+        }
+
+        const data = await response.json();
+        const hasValidShape =
+            data.title &&
+            data.overview &&
+            data.days?.length === requestDuration &&
+            data.days.every((studyDay) =>
+                studyDay.tasks?.length >= 2 && studyDay.tasks.length <= 5
+            );
+
+        if (!hasValidShape) {
+            throw new Error("The study plan response was incomplete.");
+        }
+
+        currentStudyPlan = {
+            plan: data,
+            level: requestLevel,
+            dailyMinutes,
+            durationDays: requestDuration
+        };
+        clearStudyPlanMessage();
+        renderStudyPlan();
+    } catch {
+        showStudyPlanMessage("studyPlanError", "error");
+    } finally {
+        setStudyPlanGeneratingState(false);
+        if (!currentStudyPlan) {
+            studyPlanGoal.focus();
+        }
+    }
+}
+
+function resetStudyPlan() {
+    currentStudyPlan = null;
+    studyPlanGoal.value = "";
+    studyPlanDailyMinutes.value = "60";
+    selectStudyLevel("beginner");
+    selectStudyDuration(7);
+    studyPlanTitle.textContent = "";
+    studyPlanOverview.textContent = "";
+    studyPlanDayList.textContent = "";
+    studyPlanResultState.hidden = true;
+    studyPlanSetupState.hidden = false;
+    clearStudyPlanMessage();
+    studyPlanGoal.focus();
+}
+
 chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
     sendMessage();
@@ -1014,7 +1310,13 @@ quizAnswerForm.addEventListener("submit", (event) => {
     submitQuizAnswers();
 });
 
+studyPlanForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    generateStudyPlanRequest();
+});
+
 quizNewButton.addEventListener("click", resetQuiz);
+studyPlanNewButton.addEventListener("click", resetStudyPlan);
 
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -1046,6 +1348,18 @@ explainStyleButtons.forEach((button) => {
 quizDifficultyButtons.forEach((button) => {
     button.addEventListener("click", () => {
         selectQuizDifficulty(button.dataset.quizDifficulty);
+    });
+});
+
+studyLevelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        selectStudyLevel(button.dataset.studyLevel);
+    });
+});
+
+studyDurationButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+        selectStudyDuration(button.dataset.studyDuration);
     });
 });
 

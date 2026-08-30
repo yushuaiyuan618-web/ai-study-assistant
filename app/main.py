@@ -16,6 +16,7 @@ from app.ai_service import (
     generate_explanation,
     generate_quiz,
     generate_reply,
+    generate_study_plan,
 )
 
 
@@ -57,6 +58,14 @@ class QuizSubmitRequest(BaseModel):
         if any(answer < 0 or answer > 3 for answer in answers):
             raise ValueError("Answer indexes must be between 0 and 3.")
         return answers
+
+
+class StudyPlanRequest(BaseModel):
+    goal: str
+    level: Literal["beginner", "intermediate", "advanced"]
+    daily_minutes: int = Field(ge=15, le=480)
+    duration_days: Literal[7, 30]
+    language: Literal["en", "zh"]
 
 
 def _ai_http_error(error):
@@ -175,6 +184,26 @@ def submit_quiz(quiz_request: QuizSubmitRequest):
         )
 
     return {"score": score, "total": len(quiz.questions), "results": results}
+
+
+@app.post("/api/study-plan")
+def create_study_plan(study_plan_request: StudyPlanRequest):
+    goal = study_plan_request.goal.strip()
+    if not goal:
+        raise HTTPException(status_code=400, detail="Goal cannot be empty.")
+
+    try:
+        study_plan = generate_study_plan(
+            goal,
+            study_plan_request.level,
+            study_plan_request.daily_minutes,
+            study_plan_request.duration_days,
+            study_plan_request.language,
+        )
+    except AIServiceError as error:
+        raise _ai_http_error(error) from error
+
+    return study_plan.model_dump()
 
 
 # Keep the frontend mount last so API routes are matched first.

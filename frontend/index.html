@@ -36,7 +36,7 @@
                     </svg>
                     <span data-i18n="quiz">Quiz</span>
                 </button>
-                <button class="nav-item" type="button">
+                <button class="nav-item" type="button" data-view="study-plan">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <rect x="3" y="5" width="18" height="16" rx="2"></rect>
                         <path d="M16 3v4M8 3v4M3 10h18"></path>
@@ -251,6 +251,131 @@
                         <div class="quiz-result-list" id="quizResultList"></div>
                         <button class="quiz-new-button" id="quizNewButton" type="button" data-i18n="quizNew">
                             New Quiz
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                class="study-plan-view"
+                id="studyPlanView"
+                aria-labelledby="studyPlanViewTitle"
+                hidden
+            >
+                <div class="study-plan-container">
+                    <div id="studyPlanSetupState">
+                        <header class="study-plan-header">
+                            <h2 id="studyPlanViewTitle" data-i18n="studyPlanViewTitle">Build Your Study Plan</h2>
+                            <p data-i18n="studyPlanViewSubtitle">Turn your learning goal into a clear daily roadmap.</p>
+                        </header>
+
+                        <form class="study-plan-form" id="studyPlanForm" aria-busy="false">
+                            <label class="study-plan-label" for="studyPlanGoal" data-i18n="studyPlanGoalLabel">
+                                Learning Goal
+                            </label>
+                            <textarea
+                                id="studyPlanGoal"
+                                name="goal"
+                                rows="3"
+                                placeholder="What do you want to learn or achieve?"
+                                data-i18n-placeholder="studyPlanGoalPlaceholder"
+                            ></textarea>
+
+                            <fieldset class="study-plan-fieldset">
+                                <legend data-i18n="studyPlanLevelLabel">Current Level</legend>
+                                <div class="study-plan-options">
+                                    <button
+                                        class="study-plan-option active"
+                                        type="button"
+                                        data-study-level="beginner"
+                                        aria-pressed="true"
+                                        data-i18n="studyPlanLevelBeginner"
+                                    >Beginner</button>
+                                    <button
+                                        class="study-plan-option"
+                                        type="button"
+                                        data-study-level="intermediate"
+                                        aria-pressed="false"
+                                        data-i18n="studyPlanLevelIntermediate"
+                                    >Intermediate</button>
+                                    <button
+                                        class="study-plan-option"
+                                        type="button"
+                                        data-study-level="advanced"
+                                        aria-pressed="false"
+                                        data-i18n="studyPlanLevelAdvanced"
+                                    >Advanced</button>
+                                </div>
+                            </fieldset>
+
+                            <label class="study-plan-label" for="studyPlanDailyMinutes" data-i18n="studyPlanTimeLabel">
+                                Daily Study Time
+                            </label>
+                            <div class="study-plan-time-input">
+                                <input
+                                    id="studyPlanDailyMinutes"
+                                    name="daily_minutes"
+                                    type="number"
+                                    min="15"
+                                    max="480"
+                                    step="15"
+                                    value="60"
+                                >
+                                <span data-i18n="minutesShort">min</span>
+                            </div>
+
+                            <fieldset class="study-plan-fieldset">
+                                <legend data-i18n="studyPlanDurationLabel">Plan Duration</legend>
+                                <div class="study-plan-options">
+                                    <button
+                                        class="study-plan-option active"
+                                        type="button"
+                                        data-study-duration="7"
+                                        aria-pressed="true"
+                                        data-i18n="studyPlanDurationSeven"
+                                    >7 Days</button>
+                                    <button
+                                        class="study-plan-option"
+                                        type="button"
+                                        data-study-duration="30"
+                                        aria-pressed="false"
+                                        data-i18n="studyPlanDurationThirty"
+                                    >30 Days</button>
+                                </div>
+                            </fieldset>
+
+                            <button class="study-plan-generate-button" type="submit" data-i18n="studyPlanGenerate">
+                                Generate Plan
+                            </button>
+                        </form>
+
+                        <p class="study-plan-message" id="studyPlanMessage" aria-live="polite" hidden></p>
+                    </div>
+
+                    <div class="study-plan-result-state" id="studyPlanResultState" hidden>
+                        <header class="study-plan-result-header">
+                            <h2 id="studyPlanTitle"></h2>
+                            <p id="studyPlanOverview"></p>
+                        </header>
+
+                        <div class="study-plan-meta">
+                            <p class="study-plan-meta-item">
+                                <strong class="study-plan-meta-label" data-i18n="studyPlanLevelLabel">Current Level</strong>
+                                <span class="study-plan-meta-value" id="studyPlanLevelDisplay"></span>
+                            </p>
+                            <p class="study-plan-meta-item">
+                                <strong class="study-plan-meta-label" data-i18n="studyPlanTimeLabel">Daily Study Time</strong>
+                                <span class="study-plan-meta-value" id="studyPlanTimeDisplay"></span>
+                            </p>
+                            <p class="study-plan-meta-item">
+                                <strong class="study-plan-meta-label" data-i18n="studyPlanDurationLabel">Plan Duration</strong>
+                                <span class="study-plan-meta-value" id="studyPlanDurationDisplay"></span>
+                            </p>
+                        </div>
+
+                        <div class="study-plan-day-list" id="studyPlanDayList"></div>
+                        <button class="study-plan-new-button" id="studyPlanNewButton" type="button" data-i18n="studyPlanNew">
+                            Create New Plan
                         </button>
                     </div>
                 </div>
