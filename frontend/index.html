@@ -43,7 +43,7 @@
                     </svg>
                     <span data-i18n="studyPlan">Study Plan</span>
                 </button>
-                <button class="nav-item" type="button">
+                <button class="nav-item" type="button" data-view="documents">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M6 3h9l4 4v14H6z"></path>
                         <path d="M14 3v5h5M9 13h6M9 17h6"></path>
@@ -378,6 +378,56 @@
                             Create New Plan
                         </button>
                     </div>
+                </div>
+            </section>
+
+            <section
+                class="documents-view"
+                id="documentsView"
+                aria-labelledby="documentsViewTitle"
+                hidden
+            >
+                <div class="documents-container">
+                    <header class="documents-header">
+                        <h2 id="documentsViewTitle" data-i18n="documentsViewTitle">Study Materials</h2>
+                        <p data-i18n="documentsViewSubtitle">
+                            Upload your notes or documents to prepare them for AI-powered learning.
+                        </p>
+                    </header>
+
+                    <form class="document-upload-form" id="documentUploadForm" aria-busy="false">
+                        <div class="document-upload-panel">
+                            <div>
+                                <h3 data-i18n="documentUploadTitle">Upload Document</h3>
+                                <p id="documentSupportedTypes" data-i18n="documentSupportedTypes">Supported: PDF, TXT, MD</p>
+                            </div>
+
+                            <label class="document-input-label" for="documentInput" data-i18n="documentChooseFile">
+                                Choose File
+                            </label>
+                            <input
+                                class="document-input"
+                                id="documentInput"
+                                name="file"
+                                type="file"
+                                accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+                                aria-describedby="documentSupportedTypes documentSizeLimit"
+                            >
+                            <p class="document-size-limit" id="documentSizeLimit" data-i18n="documentSizeLimit">
+                                Maximum file size: 10 MB
+                            </p>
+                            <button class="document-upload-button" type="submit" data-i18n="documentUploadAction">
+                                Upload
+                            </button>
+                        </div>
+                    </form>
+
+                    <p class="document-message" id="documentMessage" aria-live="polite" hidden></p>
+
+                    <section class="document-list-section" id="documentListSection" hidden>
+                        <h3 data-i18n="documentListTitle">Uploaded Documents</h3>
+                        <div class="document-list" id="documentList"></div>
+                    </section>
                 </div>
             </section>
 

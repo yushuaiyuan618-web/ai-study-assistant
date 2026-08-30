@@ -1,8 +1,9 @@
+import logging
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,8 +19,16 @@ from app.ai_service import (
     generate_reply,
     generate_study_plan,
 )
+from app.document_service import (
+    MAX_FILE_SIZE_BYTES,
+    DocumentServiceError,
+    create_document,
+    document_preview,
+    remove_document,
+)
 
 
+logger = logging.getLogger(__name__)
 app = FastAPI(title="AI Study Assistant")
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 quiz_store = {}
@@ -80,6 +89,10 @@ def _ai_http_error(error):
     if isinstance(error, AIEmptyResponseError):
         return HTTPException(status_code=502, detail="empty_ai_response")
     return HTTPException(status_code=502, detail="ai_generation_error")
+
+
+def _document_http_error(error):
+    return HTTPException(status_code=error.status_code, detail=error.code)
 
 
 @app.get("/api/health")
@@ -204,6 +217,42 @@ def create_study_plan(study_plan_request: StudyPlanRequest):
         raise _ai_http_error(error) from error
 
     return study_plan.model_dump()
+
+
+@app.post("/api/documents/upload")
+async def upload_document(
+    file: Annotated[UploadFile, File(description="A PDF, TXT, or Markdown file")],
+):
+    filename = file.filename
+    content_type = file.content_type
+
+    try:
+        file_bytes = await file.read(MAX_FILE_SIZE_BYTES + 1)
+    except Exception as error:
+        logger.warning("Unable to read an uploaded document: %s", type(error).__name__)
+        raise HTTPException(
+            status_code=500,
+            detail="document_processing_error",
+        ) from error
+    finally:
+        await file.close()
+
+    try:
+        document = create_document(filename, content_type, file_bytes)
+    except DocumentServiceError as error:
+        raise _document_http_error(error) from error
+
+    return document_preview(document)
+
+
+@app.delete("/api/documents/{document_id}")
+def delete_document(document_id: str):
+    try:
+        remove_document(document_id)
+    except DocumentServiceError as error:
+        raise _document_http_error(error) from error
+
+    return {"document_id": document_id, "removed": True}
 
 
 # Keep the frontend mount last so API routes are matched first.

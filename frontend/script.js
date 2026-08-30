@@ -49,6 +49,13 @@ const studyPlanTimeDisplay = document.querySelector("#studyPlanTimeDisplay");
 const studyPlanDurationDisplay = document.querySelector("#studyPlanDurationDisplay");
 const studyPlanDayList = document.querySelector("#studyPlanDayList");
 const studyPlanNewButton = document.querySelector("#studyPlanNewButton");
+const documentsView = document.querySelector("#documentsView");
+const documentUploadForm = document.querySelector("#documentUploadForm");
+const documentInput = document.querySelector("#documentInput");
+const documentUploadButton = document.querySelector(".document-upload-button");
+const documentMessage = document.querySelector("#documentMessage");
+const documentListSection = document.querySelector("#documentListSection");
+const documentList = document.querySelector("#documentList");
 
 const translations = {
     en: {
@@ -133,6 +140,33 @@ const translations = {
         studyPlanEstimatedTime: "Estimated time",
         studyPlanDailyGoal: "Goal",
         studyPlanNew: "Create New Plan",
+        documentsViewTitle: "Study Materials",
+        documentsViewSubtitle: "Upload your notes or documents to prepare them for AI-powered learning.",
+        documentUploadTitle: "Upload Document",
+        documentSupportedTypes: "Supported: PDF, TXT, MD",
+        documentChooseFile: "Choose File",
+        documentSizeLimit: "Maximum file size: 10 MB",
+        documentUploadAction: "Upload",
+        documentUploading: "Uploading...",
+        documentNoFile: "Choose a PDF, TXT, or Markdown file.",
+        documentTooLarge: "File is too large. Maximum size is 10 MB.",
+        documentUnsupported: "Unsupported file type. Please upload a PDF, TXT, or Markdown file.",
+        documentEmpty: "The selected file is empty.",
+        documentUnreadablePdf: "The PDF could not be read. Please choose a valid PDF file.",
+        documentNoReadablePdf: "No readable text could be extracted from this document. Scanned PDFs are not supported yet.",
+        documentInvalidEncoding: "The text file must use UTF-8 encoding.",
+        documentTextTooLarge: "The extracted text is too large to process.",
+        documentLimitReached: "You can keep up to 10 temporary documents.",
+        documentProcessingError: "Unable to process this document right now. Please try again.",
+        documentNotFound: "This document is no longer available.",
+        documentListTitle: "Uploaded Documents",
+        documentType: "Type",
+        documentSize: "Size",
+        documentPages: "Pages",
+        documentCharacters: "Characters",
+        documentPreview: "Text Preview",
+        documentRemove: "Remove",
+        documentRemoving: "Removing...",
         inputLabel: "Study question",
         inputPlaceholder: "Ask anything about your studies...",
         send: "Send",
@@ -229,6 +263,33 @@ const translations = {
         studyPlanEstimatedTime: "预计时间",
         studyPlanDailyGoal: "目标",
         studyPlanNew: "重新制定计划",
+        documentsViewTitle: "学习资料",
+        documentsViewSubtitle: "上传你的笔记或资料，为后续 AI 学习功能做好准备。",
+        documentUploadTitle: "上传学习资料",
+        documentSupportedTypes: "支持：PDF、TXT、MD",
+        documentChooseFile: "选择文件",
+        documentSizeLimit: "最大文件大小：10 MB",
+        documentUploadAction: "上传",
+        documentUploading: "正在上传...",
+        documentNoFile: "请选择 PDF、TXT 或 Markdown 文件。",
+        documentTooLarge: "文件过大，最大支持 10 MB。",
+        documentUnsupported: "不支持该文件类型，请上传 PDF、TXT 或 Markdown 文件。",
+        documentEmpty: "所选文件为空。",
+        documentUnreadablePdf: "无法读取该 PDF，请选择有效的 PDF 文件。",
+        documentNoReadablePdf: "无法从该文档中提取可读文本，目前暂不支持扫描版 PDF。",
+        documentInvalidEncoding: "文本文件必须使用 UTF-8 编码。",
+        documentTextTooLarge: "提取的文本过大，暂时无法处理。",
+        documentLimitReached: "最多可暂存 10 份学习资料。",
+        documentProcessingError: "暂时无法处理该文档，请稍后再试。",
+        documentNotFound: "该文档已不存在。",
+        documentListTitle: "已上传资料",
+        documentType: "类型",
+        documentSize: "大小",
+        documentPages: "页数",
+        documentCharacters: "字符数",
+        documentPreview: "文本预览",
+        documentRemove: "移除",
+        documentRemoving: "正在移除...",
         inputLabel: "学习问题",
         inputPlaceholder: "输入你的学习问题...",
         send: "发送",
@@ -254,6 +315,23 @@ const errorTranslationKeyByCode = {
     ai_generation_error: "aiGenerationError"
 };
 
+const documentErrorTranslationKeyByCode = {
+    unsupported_file_type: "documentUnsupported",
+    file_too_large: "documentTooLarge",
+    empty_file: "documentEmpty",
+    unreadable_pdf: "documentUnreadablePdf",
+    no_readable_pdf_text: "documentNoReadablePdf",
+    invalid_text_encoding: "documentInvalidEncoding",
+    extracted_text_too_large: "documentTextTooLarge",
+    document_limit_reached: "documentLimitReached",
+    document_not_found: "documentNotFound",
+    document_processing_error: "documentProcessingError"
+};
+
+const DOCUMENT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const DOCUMENT_MAX_COUNT = 10;
+const SUPPORTED_DOCUMENT_EXTENSIONS = ["pdf", "txt", "md"];
+
 const savedLanguage = localStorage.getItem("studyAssistantLanguage");
 let currentLanguage = savedLanguage === "zh" ? "zh" : "en";
 let isSending = false;
@@ -267,6 +345,8 @@ let isGeneratingStudyPlan = false;
 let selectedStudyLevel = "beginner";
 let selectedStudyDuration = 7;
 let currentStudyPlan = null;
+let isUploadingDocument = false;
+const uploadedDocuments = [];
 const conversationHistory = [];
 
 function applyLanguage(language) {
@@ -296,6 +376,7 @@ function applyLanguage(language) {
 
     updateQuizLocalizedText();
     updateStudyPlanLocalizedText();
+    updateDocumentLocalizedText();
 
     localStorage.setItem("studyAssistantLanguage", language);
 }
@@ -349,6 +430,25 @@ function updateStudyPlanLocalizedText() {
     }
 }
 
+function formatFileSize(sizeBytes) {
+    const locale = currentLanguage === "zh" ? "zh-CN" : "en-US";
+    const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+
+    if (sizeBytes < 1024) {
+        return `${sizeBytes} B`;
+    }
+    if (sizeBytes < 1024 * 1024) {
+        return `${formatter.format(sizeBytes / 1024)} KB`;
+    }
+    return `${formatter.format(sizeBytes / (1024 * 1024))} MB`;
+}
+
+function updateDocumentLocalizedText() {
+    document.querySelectorAll("[data-document-size]").forEach((element) => {
+        element.textContent = formatFileSize(Number(element.dataset.documentSize));
+    });
+}
+
 function resizeMessageInput() {
     messageInput.style.height = "auto";
     messageInput.style.height = `${Math.min(messageInput.scrollHeight, 160)}px`;
@@ -370,12 +470,14 @@ function setActiveView(view) {
     const isExplainView = view === "explain";
     const isQuizView = view === "quiz";
     const isStudyPlanView = view === "study-plan";
+    const isDocumentsView = view === "documents";
 
     chatArea.hidden = !isChatView;
     chatInputArea.hidden = !isChatView;
     explainView.hidden = !isExplainView;
     quizView.hidden = !isQuizView;
     studyPlanView.hidden = !isStudyPlanView;
+    documentsView.hidden = !isDocumentsView;
 
     viewButtons.forEach((button) => {
         const isActive = button.dataset.view === view;
@@ -396,6 +498,8 @@ function setActiveView(view) {
         quizTopic.focus();
     } else if (isStudyPlanView && !currentStudyPlan) {
         studyPlanGoal.focus();
+    } else if (isDocumentsView) {
+        documentInput.focus();
     }
 }
 
@@ -1290,6 +1394,217 @@ function resetStudyPlan() {
     studyPlanGoal.focus();
 }
 
+function showDocumentMessage(translationKey, state = "") {
+    documentMessage.hidden = false;
+    documentMessage.className = `document-message${state ? ` ${state}` : ""}`;
+    documentMessage.dataset.i18n = translationKey;
+    documentMessage.textContent = translations[currentLanguage][translationKey];
+}
+
+function clearDocumentMessage() {
+    documentMessage.hidden = true;
+    documentMessage.className = "document-message";
+    documentMessage.textContent = "";
+    delete documentMessage.dataset.i18n;
+}
+
+function setDocumentUploadingState(uploading) {
+    isUploadingDocument = uploading;
+    documentInput.disabled = uploading;
+    documentUploadButton.disabled = uploading;
+    documentUploadForm.setAttribute("aria-busy", uploading);
+
+    const translationKey = uploading ? "documentUploading" : "documentUploadAction";
+    documentUploadButton.dataset.i18n = translationKey;
+    documentUploadButton.textContent = translations[currentLanguage][translationKey];
+}
+
+function validateDocumentFile(file) {
+    if (!file) {
+        return "documentNoFile";
+    }
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    if (!SUPPORTED_DOCUMENT_EXTENSIONS.includes(extension)) {
+        return "documentUnsupported";
+    }
+    if (file.size === 0) {
+        return "documentEmpty";
+    }
+    if (file.size > DOCUMENT_MAX_FILE_SIZE_BYTES) {
+        return "documentTooLarge";
+    }
+    if (uploadedDocuments.length >= DOCUMENT_MAX_COUNT) {
+        return "documentLimitReached";
+    }
+
+    return "";
+}
+
+function appendDocumentMetadata(container, labelKey, value, data = {}) {
+    const item = document.createElement("div");
+    const label = document.createElement("dt");
+    const content = document.createElement("dd");
+
+    item.className = "document-meta-item";
+    label.dataset.i18n = labelKey;
+    label.textContent = translations[currentLanguage][labelKey];
+    content.textContent = value;
+
+    Object.entries(data).forEach(([key, dataValue]) => {
+        content.dataset[key] = dataValue;
+    });
+
+    item.append(label, content);
+    container.appendChild(item);
+}
+
+async function removeDocumentRequest(documentData, documentCard, removeButton) {
+    if (removeButton.disabled) {
+        return;
+    }
+
+    removeButton.disabled = true;
+    removeButton.dataset.i18n = "documentRemoving";
+    removeButton.textContent = translations[currentLanguage].documentRemoving;
+    let errorTranslationKey = "documentProcessingError";
+
+    try {
+        const response = await fetch(
+            `/api/documents/${encodeURIComponent(documentData.document_id)}`,
+            { method: "DELETE" }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            errorTranslationKey =
+                documentErrorTranslationKeyByCode[errorData.detail] ||
+                "documentProcessingError";
+            throw new Error("The document removal request failed.");
+        }
+
+        const documentIndex = uploadedDocuments.findIndex(
+            (item) => item.document_id === documentData.document_id
+        );
+        if (documentIndex !== -1) {
+            uploadedDocuments.splice(documentIndex, 1);
+        }
+        documentCard.remove();
+        documentListSection.hidden = uploadedDocuments.length === 0;
+        clearDocumentMessage();
+    } catch {
+        showDocumentMessage(errorTranslationKey, "error");
+    } finally {
+        removeButton.disabled = false;
+        removeButton.dataset.i18n = "documentRemove";
+        removeButton.textContent = translations[currentLanguage].documentRemove;
+    }
+}
+
+function renderDocument(documentData) {
+    const documentCard = document.createElement("article");
+    const header = document.createElement("div");
+    const filename = document.createElement("h4");
+    const removeButton = document.createElement("button");
+    const metadata = document.createElement("dl");
+    const previewHeading = document.createElement("h5");
+    const preview = document.createElement("pre");
+
+    documentCard.className = "document-item";
+    documentCard.dataset.documentId = documentData.document_id;
+    header.className = "document-item-header";
+    filename.textContent = documentData.filename;
+    removeButton.className = "document-remove-button";
+    removeButton.type = "button";
+    removeButton.dataset.i18n = "documentRemove";
+    removeButton.textContent = translations[currentLanguage].documentRemove;
+    removeButton.addEventListener("click", () => {
+        removeDocumentRequest(documentData, documentCard, removeButton);
+    });
+    header.append(filename, removeButton);
+
+    metadata.className = "document-meta";
+    appendDocumentMetadata(metadata, "documentType", documentData.file_type.toUpperCase());
+    appendDocumentMetadata(
+        metadata,
+        "documentSize",
+        formatFileSize(documentData.size_bytes),
+        { documentSize: documentData.size_bytes }
+    );
+    if (documentData.page_count !== null) {
+        appendDocumentMetadata(metadata, "documentPages", documentData.page_count);
+    }
+    appendDocumentMetadata(metadata, "documentCharacters", documentData.text_length);
+
+    previewHeading.dataset.i18n = "documentPreview";
+    previewHeading.textContent = translations[currentLanguage].documentPreview;
+    preview.className = "document-preview";
+    preview.textContent = documentData.preview;
+
+    documentCard.append(header, metadata, previewHeading, preview);
+    documentList.appendChild(documentCard);
+    documentListSection.hidden = false;
+}
+
+async function uploadDocumentRequest() {
+    if (isUploadingDocument) {
+        return;
+    }
+
+    const file = documentInput.files[0];
+    const validationError = validateDocumentFile(file);
+    if (validationError) {
+        showDocumentMessage(validationError, "error");
+        documentInput.focus();
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    setDocumentUploadingState(true);
+    clearDocumentMessage();
+    let errorTranslationKey = "documentProcessingError";
+
+    try {
+        const response = await fetch("/api/documents/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            errorTranslationKey =
+                documentErrorTranslationKeyByCode[errorData.detail] ||
+                "documentProcessingError";
+            throw new Error("The document upload request failed.");
+        }
+
+        const data = await response.json();
+        const hasValidShape =
+            typeof data.document_id === "string" &&
+            typeof data.filename === "string" &&
+            SUPPORTED_DOCUMENT_EXTENSIONS.includes(data.file_type) &&
+            Number.isInteger(data.size_bytes) &&
+            Number.isInteger(data.text_length) &&
+            typeof data.preview === "string" &&
+            (data.page_count === null || Number.isInteger(data.page_count));
+
+        if (!hasValidShape) {
+            throw new Error("The document response was incomplete.");
+        }
+
+        uploadedDocuments.push(data);
+        renderDocument(data);
+        documentInput.value = "";
+        clearDocumentMessage();
+    } catch {
+        showDocumentMessage(errorTranslationKey, "error");
+    } finally {
+        setDocumentUploadingState(false);
+        documentInput.focus();
+    }
+}
+
 chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
     sendMessage();
@@ -1315,8 +1630,15 @@ studyPlanForm.addEventListener("submit", (event) => {
     generateStudyPlanRequest();
 });
 
+documentUploadForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    uploadDocumentRequest();
+});
+
 quizNewButton.addEventListener("click", resetQuiz);
 studyPlanNewButton.addEventListener("click", resetStudyPlan);
+
+documentInput.addEventListener("change", clearDocumentMessage);
 
 messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {

@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 8 AI Study Plan mode implemented
+Step 9 Documents mode implemented
 
 ## Completed
 - Git repository initialized
@@ -60,12 +60,25 @@ Step 8 AI Study Plan mode implemented
 - English and Simplified Chinese 7-day and 30-day plans verified with local Qwen3.5 4B
 - Beginner and advanced plan behavior and daily time-budget behavior verified with local Qwen3.5 4B
 - Health, static frontend, Study Plan API, Chat context, Explain, Quiz generation, and scoring passed HTTP regression checks
+- Dedicated bilingual Documents view added with PDF, TXT, and Markdown upload support
+- `/api/documents/upload` validates multipart uploads, file type, 10 MB size, encoding, and extracted content
+- Local PDF text extraction and page counting use the pure-Python BSD-3-Clause `pypdf` library
+- TXT and Markdown files support UTF-8, UTF-8 BOM, and normalized line endings
+- Uploaded documents receive UUID document IDs and retain full extracted text in backend process memory
+- Upload responses return safe metadata and a 3,000-character preview instead of full document text
+- Up to 10 temporary documents are supported, with a 1,000,000-character extracted-text safety limit
+- `DELETE /api/documents/{document_id}` removes temporary records and returns a controlled 404 when missing
+- Document previews render as safe plain text; uploaded Markdown is never evaluated as HTML
+- Scanned PDFs fail with a controlled message because OCR is intentionally not included
+- Documents state remains separate from Chat, Explain, Quiz, and Study Plan state
+- TXT, Markdown, two-page PDF, validation, preview, storage, multiple-record, and removal tests passed
+- Existing Chat context, Explain, Quiz, and Study Plan endpoints passed live regression checks after Step 9
 
 ## In Progress
 - None
 
 ## Next Step
-- Manually verify the Step 8 interface in a browser, then review the uncommitted changes before starting Step 9
+- Manually verify the Step 9 Documents interface, then review the uncommitted changes before starting Step 10
 
 ## Important Decisions
 - Development will be incremental.
@@ -97,10 +110,19 @@ Step 8 AI Study Plan mode implemented
 - Study Plan prompts and validation enforce the selected level, exact duration, and daily time ceiling.
 - Generated study plans exist only in the current page session and are not persisted.
 - Study Plan rendering uses DOM text content and never injects AI-generated HTML.
+- Document parsing is fully local and is intentionally separate from `ai_service.py`.
+- Research compared pypdf, PyMuPDF, and pdfplumber; pypdf was selected for its light pure-Python dependency, permissive license, and sufficient plain-text extraction.
+- Hugging Face components were not added because its experimental PDF dataset support wraps pdfplumber and adds unnecessary weight for simple extraction.
+- Uploaded files are processed from bounded in-memory bytes and are not saved using user-controlled paths.
+- Full document text remains available by document ID for future Step 10 work, but no chunking, embeddings, retrieval, or RAG exists yet.
+- Temporary documents are limited to 10 files, 10 MB per upload, and 1,000,000 extracted characters each.
 
 ## Known Issues
 - Automated browser interaction was unavailable, so Study Plan navigation, controls, generated layout, language switching, reset behavior, and responsive styling need a brief manual visual check.
+- Automated browser interaction was unavailable, so Documents navigation, upload styling, bilingual labels, preview scrolling, and removal need a brief manual visual check.
 - Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
 - Local 30-day Study Plan generation took roughly 95 seconds in warm-model tests and may be slower after a cold start.
 - Unfinished quizzes are intentionally lost when the FastAPI process restarts.
 - Generated study plans are intentionally lost when the page is refreshed.
+- Uploaded documents are intentionally lost when the FastAPI process restarts.
+- Scanned/image-only PDFs are unsupported because Step 9 does not include OCR.
