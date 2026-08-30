@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 4 local AI integration implemented
+Step 5 multi-turn conversation context implemented
 
 ## Completed
 - Git repository initialized
@@ -22,12 +22,17 @@ Step 4 local AI integration implemented
 - Ollama Responses API integration created
 - Local AI loading and error states added
 - Local AI setup and architecture documented
+- Current-session multi-turn conversation context added
+- Chat history is validated as user and assistant messages only
+- Frontend sends previous completed messages with each new chat request
+- Ollama receives the latest 12 history messages plus the current message
+- English and Simplified Chinese contextual follow-ups verified with Qwen3.5 4B
 
 ## In Progress
 - None
 
 ## Next Step
-- Install Ollama and Qwen3.5 4B, then verify a live model response
+- Review and manually verify the Step 5 browser interaction before starting Step 6
 
 ## Important Decisions
 - Development will be incremental.
@@ -41,6 +46,11 @@ Step 4 local AI integration implemented
 - Step 4 defaults to local Ollama with the Qwen3.5 4B model.
 - The OpenAI Python SDK communicates only with the configured local Ollama URL.
 - The frontend and `/api/chat` contract remain independent of the AI provider.
+- Conversation memory exists only in the current browser page session.
+- Only successful user and assistant messages become conversation context.
+- Model context is capped at the latest 12 messages without token counting or summarization.
+- Conversation history is not stored in a database, server session, or browser storage.
 
 ## Known Issues
-- Ollama and Qwen3.5 4B are not installed on the current development machine, so a live model response still requires manual verification.
+- Automated browser interaction was unavailable during Step 5 testing, so the visible send, loading, and error flows still need a brief manual check.
+- The first Ollama request after a cold model start can be slow; one cold test reached the existing friendly unavailable response before later live tests succeeded.

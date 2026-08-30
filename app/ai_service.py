@@ -16,6 +16,7 @@ DEFAULT_PROVIDER = "ollama"
 DEFAULT_BASE_URL = "http://localhost:11434/v1/"
 DEFAULT_MODEL = "qwen3.5:4b"
 DEFAULT_API_KEY = "ollama"
+MAX_HISTORY_MESSAGES = 12
 
 STUDY_ASSISTANT_INSTRUCTIONS = (
     "You are an AI Study Assistant. Explain concepts clearly and prioritize "
@@ -67,7 +68,21 @@ def _build_instructions(language):
     return f"{STUDY_ASSISTANT_INSTRUCTIONS} {language_instruction}"
 
 
-def generate_reply(message, language):
+def _build_model_input(message, history=None):
+    model_input = []
+
+    for history_message in (history or [])[-MAX_HISTORY_MESSAGES:]:
+        role = history_message.get("role")
+        content = history_message.get("content", "").strip()
+
+        if role in {"user", "assistant"} and content:
+            model_input.append({"role": role, "content": content})
+
+    model_input.append({"role": "user", "content": message})
+    return model_input
+
+
+def generate_reply(message, language, history=None):
     base_url, model, api_key = _load_configuration()
     client = OpenAI(
         base_url=base_url,
@@ -80,7 +95,7 @@ def generate_reply(message, language):
         response = client.responses.create(
             model=model,
             instructions=_build_instructions(language),
-            input=message,
+            input=_build_model_input(message, history),
         )
     except APIConnectionError as error:
         logger.error(

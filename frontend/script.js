@@ -74,6 +74,7 @@ const translations = {
 const savedLanguage = localStorage.getItem("studyAssistantLanguage");
 let currentLanguage = savedLanguage === "zh" ? "zh" : "en";
 let isSending = false;
+const conversationHistory = [];
 
 function applyLanguage(language) {
     const selectedTranslations = translations[language];
@@ -117,6 +118,13 @@ function setSendingState(sending) {
     isSending = sending;
     sendButton.disabled = sending;
     chatForm.setAttribute("aria-busy", sending);
+}
+
+function rememberSuccessfulTurn(userMessage, assistantReply) {
+    conversationHistory.push(
+        { role: "user", content: userMessage },
+        { role: "assistant", content: assistantReply }
+    );
 }
 
 function displayUserMessage(message) {
@@ -174,6 +182,9 @@ async function sendMessage() {
     }
 
     const requestLanguage = currentLanguage;
+    const previousHistory = conversationHistory.map((historyMessage) => ({
+        ...historyMessage
+    }));
 
     displayUserMessage(message);
     messageInput.value = "";
@@ -195,7 +206,8 @@ async function sendMessage() {
             },
             body: JSON.stringify({
                 message,
-                language: requestLanguage
+                language: requestLanguage,
+                history: previousHistory
             })
         });
 
@@ -209,6 +221,7 @@ async function sendMessage() {
         const data = await response.json();
         loadingMessage.remove();
         displayAssistantMessage(data.reply);
+        rememberSuccessfulTurn(message, data.reply);
     } catch {
         loadingMessage.remove();
         displayAssistantMessage(

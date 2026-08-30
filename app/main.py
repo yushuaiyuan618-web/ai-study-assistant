@@ -1,8 +1,9 @@
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.ai_service import AIConfigurationError, AIServiceError, generate_reply
 
@@ -11,9 +12,15 @@ app = FastAPI(title="AI Study Assistant")
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 
 
+class ConversationMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str
     language: str
+    history: list[ConversationMessage] = Field(default_factory=list)
 
 
 @app.get("/api/health")
@@ -27,9 +34,14 @@ def chat(chat_request: ChatRequest):
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
     language = "zh" if chat_request.language == "zh" else "en"
+    history = [
+        {"role": history_message.role, "content": history_message.content.strip()}
+        for history_message in chat_request.history
+        if history_message.content.strip()
+    ]
 
     try:
-        reply = generate_reply(chat_request.message.strip(), language)
+        reply = generate_reply(chat_request.message.strip(), language, history)
     except AIConfigurationError as error:
         raise HTTPException(
             status_code=503,
