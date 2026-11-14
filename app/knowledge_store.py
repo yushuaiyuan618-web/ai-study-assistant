@@ -10,6 +10,7 @@ from app import journal_service as journal
 
 MAX_ATTEMPTS = 3
 LEASE_SECONDS = 600
+MAP_EDGE_LIMIT = 2000
 
 
 def initialize_schema(connection):
@@ -298,6 +299,24 @@ def concept_detail(concept_id):
             (concept_id,),
         )]
     return item
+
+
+def topic_relations(topic_id, limit=500):
+    # Match the concept-list ordering and bound the rendered topic, not its evidence.
+    with journal._connection() as connection:
+        if not connection.execute("SELECT 1 FROM topics WHERE id=?", (topic_id,)).fetchone():
+            return None
+        rows = connection.execute(
+            """WITH visible AS (
+                SELECT id FROM concepts WHERE topic_id=? ORDER BY name,id LIMIT ?
+            )
+            SELECT r.id,r.source_id,r.target_id,r.relation_type
+            FROM concept_relations r
+            WHERE r.source_id IN (SELECT id FROM visible)
+              AND r.target_id IN (SELECT id FROM visible)
+            ORDER BY r.id LIMIT ?""", (topic_id, limit, MAP_EDGE_LIMIT + 1),
+        ).fetchall()
+        return {"items": [dict(row) for row in rows[:MAP_EDGE_LIMIT]], "truncated": len(rows) > MAP_EDGE_LIMIT}
 
 
 def concept_sources(concept_id, limit=50, offset=0):

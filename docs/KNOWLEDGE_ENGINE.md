@@ -1,7 +1,8 @@
 # Step 14 - Local Knowledge Engine
 
-This step adds backend extraction, storage and query APIs. There is no Knowledge
-Map page, graph visualization, graph-based answer generation or agent framework.
+Step 14 adds backend extraction, storage and query APIs without visualization.
+Step 15 adds a separate [read-only Knowledge Map](KNOWLEDGE_MAP.md); extraction,
+graph storage, identity and evidence rules described here remain unchanged.
 
 ## Reuse and research
 
@@ -146,6 +147,7 @@ no-store`; internal lease tokens and embedding blobs are never exposed.
 | --- | --- | --- |
 | GET | `/topics` | All topics with aliases and concept counts |
 | GET | `/topics/{topic_id}/concepts` | Topic's nodes; `limit=1..1000`, `offset>=0` |
+| GET | `/topics/{topic_id}/relations` | Step 15 read-only edges among the first `limit=1..500` nodes, ordered like the concept list; at most 2,000 edges and an explicit `truncated` flag |
 | GET | `/concepts/{concept_id}` | Node metadata and source-specific definitions |
 | GET | `/concepts/{concept_id}/relations` | Incoming/outgoing edges and original evidence |
 | GET | `/concepts/{concept_id}/sources` | Original journal pairs; `limit=1..100`, `offset>=0` |

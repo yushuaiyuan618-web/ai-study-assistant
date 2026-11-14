@@ -57,6 +57,13 @@
                     </svg>
                     <span data-i18n="journal">Learning Journal</span>
                 </button>
+                <button class="nav-item" type="button" data-view="knowledge-map">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="5" r="3"></circle><circle cx="5" cy="18" r="3"></circle>
+                        <circle cx="19" cy="18" r="3"></circle><path d="m10.5 8-4 7M13.5 8l4 7M8 18h8"></path>
+                    </svg>
+                    <span data-i18n="knowledgeMap">Knowledge Map</span>
+                </button>
             </nav>
 
             <p class="sidebar-footer" data-i18n="sidebarFooter">AI-powered personalized learning</p>
@@ -80,6 +87,7 @@
                         <option value="study-plan" data-i18n="studyPlan">Study Plan</option>
                         <option value="documents" data-i18n="documents">Documents</option>
                         <option value="journal" data-i18n="journal">Learning Journal</option>
+                        <option value="knowledge-map" data-i18n="knowledgeMap">Knowledge Map</option>
                     </select>
 
                     <div class="language-switcher" role="group" aria-label="Language selection" data-i18n-aria-label="languageSelection">
@@ -550,6 +558,55 @@
                 </div>
             </section>
 
+            <section class="knowledge-map-view" id="knowledgeMapView" aria-labelledby="knowledgeMapTitle" hidden>
+                <div class="knowledge-map-container">
+                    <header class="knowledge-map-heading">
+                        <h2 id="knowledgeMapTitle" data-i18n="knowledgeMap">Knowledge Map</h2>
+                        <p data-i18n="mapSubtitle">Explore the knowledge taking shape through your learning.</p>
+                    </header>
+                    <div class="map-toolbar">
+                        <label class="map-topic-label" for="mapTopic"><span data-i18n="mapTopic">Topic</span>
+                            <select id="mapTopic" disabled></select>
+                        </label>
+                        <div class="map-mode-options" role="group" aria-label="Map mode" data-i18n-aria-label="mapMode">
+                            <button type="button" data-map-mode="mind" aria-pressed="true" class="active" data-i18n="mapMind">Mind Map</button>
+                            <button type="button" data-map-mode="graph" aria-pressed="false" data-i18n="mapGraph">Knowledge Graph</button>
+                        </div>
+                        <button class="map-button" id="mapRefresh" type="button" data-i18n="mapRefresh">Refresh data</button>
+                    </div>
+                    <form class="map-search" id="mapSearchForm" role="search">
+                        <label class="visually-hidden" for="mapSearch" data-i18n="mapSearch">Find a concept by name, alias or keyword</label>
+                        <input type="search" id="mapSearch" autocomplete="off" data-i18n-placeholder="mapSearch" placeholder="Find a concept by name, alias or keyword" disabled>
+                        <button class="map-button" id="mapSearchButton" type="submit" data-i18n="mapFind" disabled>Find</button>
+                        <label class="visually-hidden" for="mapNodeSelect" data-i18n="mapConcepts">Concepts in this topic</label>
+                        <select id="mapNodeSelect" disabled></select>
+                    </form>
+                    <p class="map-status" id="mapStatus" role="status" hidden></p>
+                    <p class="map-note" id="mapNote" hidden></p>
+                    <div class="map-workspace" id="mapWorkspace" hidden>
+                        <div class="map-canvas-panel">
+                            <div class="map-controls" role="group" aria-label="Map controls" data-i18n-aria-label="mapControls">
+                                <button class="map-button" id="mapZoomIn" type="button" aria-label="Zoom in" data-i18n-aria-label="mapZoomIn">+</button>
+                                <button class="map-button" id="mapZoomOut" type="button" aria-label="Zoom out" data-i18n-aria-label="mapZoomOut">−</button>
+                                <button class="map-button" id="mapFit" type="button" data-i18n="mapFit">Fit</button>
+                                <button class="map-button" id="mapReset" type="button" data-i18n="mapReset">Reset view</button>
+                                <button class="map-button" id="mapToggleBranch" type="button" hidden></button>
+                            </div>
+                            <div class="map-canvas" id="mapCanvas" role="img" aria-label="Interactive knowledge map" data-i18n-aria-label="mapCanvas"></div>
+                            <p class="map-hint" data-i18n="mapHint">Drag to pan or move a node. Scroll or pinch to zoom. Use the concept list to select with a keyboard.</p>
+                        </div>
+                        <aside class="map-detail" id="mapDetail" aria-labelledby="mapDetailTitle">
+                            <div class="map-detail-heading">
+                                <h3 id="mapDetailTitle" data-i18n="mapDetails">Concept details</h3>
+                                <button class="map-button" id="mapCloseDetail" type="button" aria-label="Clear selection" data-i18n-aria-label="mapClose">×</button>
+                            </div>
+                            <div id="mapDetailContent" aria-live="polite"></div>
+                        </aside>
+                    </div>
+                    <ul class="map-legend" id="mapLegend" aria-label="Relationship legend" data-i18n-aria-label="mapLegend" hidden></ul>
+                </div>
+            </section>
+
             <dialog class="journal-confirm" id="journalClearDialog" aria-labelledby="journalClearTitle">
                 <form method="dialog">
                     <h3 id="journalClearTitle" data-i18n="journalClearTitle">Clear your learning journal?</h3>
@@ -579,7 +636,9 @@
     </div>
 
     <script src="vendor/katex/katex.min.js"></script>
+    <script src="vendor/cytoscape/cytoscape-3.35.0.min.js"></script>
     <script src="journal.js"></script>
+    <script src="knowledge-map.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

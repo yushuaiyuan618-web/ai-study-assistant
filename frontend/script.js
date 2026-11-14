@@ -71,6 +71,7 @@ const documentSourceList = document.querySelector("#documentSourceList");
 const translations = {
     en: {
         ...journalTranslations.en,
+        ...knowledgeMapTranslations.en,
         pageTitle: "AI Study Assistant",
         appName: "AI Study Assistant",
         mainNavigation: "Main navigation",
@@ -220,6 +221,7 @@ const translations = {
     },
     zh: {
         ...journalTranslations.zh,
+        ...knowledgeMapTranslations.zh,
         pageTitle: "AI 学习助手",
         appName: "AI 学习助手",
         mainNavigation: "主导航",
@@ -451,6 +453,7 @@ function applyLanguage(language) {
     updateStudyPlanLocalizedText();
     updateDocumentLocalizedText();
     updateJournalLocalizedText();
+    updateKnowledgeMapLanguage();
 
     localStorage.setItem("studyAssistantLanguage", language);
 }
@@ -574,6 +577,7 @@ function setActiveView(view) {
     const isStudyPlanView = view === "study-plan";
     const isDocumentsView = view === "documents";
     const isJournalView = view === "journal";
+    const isKnowledgeMapView = view === "knowledge-map";
 
     chatArea.hidden = !isChatView;
     chatInputArea.hidden = !isChatView;
@@ -582,6 +586,7 @@ function setActiveView(view) {
     studyPlanView.hidden = !isStudyPlanView;
     documentsView.hidden = !isDocumentsView;
     journalView.hidden = !isJournalView;
+    knowledgeMapView.hidden = !isKnowledgeMapView;
     mobileViewSelect.value = view;
 
     viewButtons.forEach((button) => {
@@ -607,6 +612,8 @@ function setActiveView(view) {
         (uploadedDocuments.length ? documentQuestion : documentInput).focus();
     } else if (isJournalView) {
         loadJournal();
+    } else if (isKnowledgeMapView) {
+        openKnowledgeMap();
     }
 }
 
@@ -2135,3 +2142,4 @@ studyDurationButtons.forEach((button) => {
 applyLanguage(currentLanguage);
 updateDocumentEmptyState();
 initializeJournal();
+initializeKnowledgeMap();

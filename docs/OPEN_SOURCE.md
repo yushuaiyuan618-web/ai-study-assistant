@@ -18,6 +18,7 @@ AI Study Assistant intentionally builds on mature open-source software and open 
 | NumPy | Vector normalization and exact cosine similarity | BSD-3-Clause (primary project license) | [numpy/numpy](https://github.com/numpy/numpy) |
 | semantic-text-splitter | Boundary-aware text and Markdown chunking | MIT | [benbrandt/text-splitter](https://github.com/benbrandt/text-splitter) |
 | KaTeX 0.18.4 | Safe local rendering of model-generated mathematical notation | MIT | [KaTeX/KaTeX](https://github.com/KaTeX/KaTeX) |
+| Cytoscape.js 3.35.0 | Local interactive Knowledge Map rendering, hierarchy and CoSE layouts | MIT (bundled LICENSE) | [cytoscape/cytoscape.js](https://github.com/cytoscape/cytoscape.js) |
 | python-dotenv | Local `.env` configuration loading | BSD-3-Clause | [theskumar/python-dotenv](https://github.com/theskumar/python-dotenv) |
 | python-multipart | FastAPI multipart file-upload parsing | Apache-2.0 | [Kludex/python-multipart](https://github.com/Kludex/python-multipart) |
 
@@ -46,6 +47,7 @@ Licenses listed here were checked against official repositories/model cards and 
 - Safe Markdown/math/plain-text rendering and responsive product UX
 - Local SQLite Learning Journal, user-controlled difficulty marks and bilingual PDF exports
 - Local knowledge extraction with source-preserving concept identity checks, evidence-grounded relations and a durable SQLite background queue
+- Read-only knowledge-map integration, real-relation semantics, topic organization, bilingual details and keyboard-accessible search
 
 ## Project-Level License Review
 

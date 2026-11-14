@@ -66,6 +66,17 @@ def _require_concept(concept_id, language):
     return concept
 
 
+@router.get("/topics/{topic_id}/relations")
+def get_topic_relations(
+    topic_id: str, language: Language = "en",
+    limit: Annotated[int, Query(ge=1, le=500)] = 500,
+):
+    result = store.topic_relations(topic_id, limit)
+    if result is None:
+        raise _error("knowledge_not_found", language)
+    return result
+
+
 @router.get("/concepts/{concept_id}")
 def get_concept(concept_id: str, language: Language = "en"):
     return _require_concept(concept_id, language)

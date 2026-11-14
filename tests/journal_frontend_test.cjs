@@ -76,6 +76,7 @@ const context = vm.createContext({
 const journalSource = fs.readFileSync("frontend/journal.js", "utf8");
 const mainSource = fs.readFileSync("frontend/script.js", "utf8");
 vm.runInContext(journalSource, context);
+vm.runInContext(fs.readFileSync("frontend/knowledge-map.js", "utf8"), context);
 vm.runInContext(mainSource.slice(mainSource.indexOf("const translations ="), mainSource.indexOf("const errorTranslationKeyByCode")), context);
 vm.runInContext("let currentLanguage = 'en';", context);
 elements.get("#journalKind").value = "all";

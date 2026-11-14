@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 14 local Knowledge Engine complete and verified; GitHub publication authorized by the user
+Step 15 interactive Knowledge Map complete and verified
 
 ## Completed
 - Git repository initialized
@@ -166,11 +166,32 @@ Step 14 local Knowledge Engine complete and verified; GitHub publication authori
 - Step 14 files: new `app/knowledge_models.py`, `knowledge_ai.py`, `knowledge_store.py`, `knowledge_service.py`, `knowledge_worker.py`, `knowledge_routes.py`; small integrations in `app/main.py` and `app/journal_service.py`; new knowledge tests/live runner and documentation
 - No frontend, README, AI/RAG/document-parsing service, requirements or model defaults were changed; Step 14 adds no dependencies, paid API, cloud database or visualization
 
+- Step 15 adds bilingual Knowledge Map navigation on desktop and the existing mobile mode selector, without replacing any learning mode
+- Cytoscape.js 3.35.0 is pinned and served locally with its MIT LICENSE and SHA-256 provenance; Mind Elixir Core 6.0.1 was researched but not installed
+- Mind Map uses the built-in breadthfirst layout: a distinct topic root, real topic membership and only unambiguous acyclic part_of sub-branches; actual branches can collapse/expand
+- Knowledge Graph uses built-in CoSE with the five stored relation types, semantic arrows, symmetric non-arrow edges, localized labels and a restrained legend; no relations are invented
+- Concept selection loads existing detail/relations APIs for definition, topic, bilingual aliases, keywords and unique related-concept count; no full journal tracing or editing was added
+- Search locates names, aliases and keywords, reveals collapsed ancestors and cycles matches; native concept selection supports keyboard use, with zoom, Fit, Reset, pan and temporary node drag
+- Existing topic/concept APIs are reused; a small read-only GET /api/knowledge/topics/{topic_id}/relations avoids per-node N+1 calls and returns only actual edges among the same ordered visible nodes
+- Each view is bounded to 500 concepts and 2,000 internal edges with visible truncation/search-scope notices; no component hierarchy is inferred from a truncated edge set
+- Topic/detail requests cancel stale results and time out after 20 seconds; empty topics/nodes, missing optional fields, API/library failure and retry paths have safe bilingual states
+- The viewport shell and fixed sidebar/header are preserved; desktop details use a bounded panel and phone details stack below the canvas without document-level scrolling
+- All 44 Python tests passed: the previous 38 engine/journal cases plus six read-only map API tests, including no graph mutation/no inference and dense-edge bounds
+- Seven knowledge-map frontend groups passed with the actual vendored Cytoscape layouts; hierarchy, cycles/multiple parents, directions, collapse/reveal, search, bilingual text, stale requests, empty/errors, optional fields and library recovery are covered
+- A 500-node headless CoSE smoke and library-failure recovery completed in about 0.8 seconds on this machine; original five Journal frontend regression groups remain passing
+- Actual Edge browser acceptance used an isolated backup of the successful Step 14 real Qwen/BGE-M3 SQLite corpus: Machine Learning, eight nodes covering all six required questions, and the one saved Backpropagation applied_in Gradient Descent edge
+- Browser checks passed modes, actual node click/details, alias search, zoom/Fit/Reset, temporary node drag, canvas pan, topic-root collapse, bilingual UI/legend and SQLite reload; no demo data was substituted
+- Desktop and 320px/~354px CSS-width mobile checks passed all seven navigation modes, fixed header/sidebar behavior and mobile stacked details; existing Chat/Explain/Quiz/Plan/Documents draft inputs survived map switching
+- Separate isolated browser servers verified English/Chinese empty and 503/retry states; deeper part_of branches and multiple-topic isolation use clearly identified test fixtures because the real corpus has one topic and no component edges
+- Python compilation, three JavaScript syntax checks, 109 unique HTML IDs, balanced HTML/CSS structure, seven local asset paths, dependency consistency and Git whitespace checks passed
+- Step 15 files: frontend navigation/styles/integration, new knowledge-map.js and vendored Cytoscape files; small read-only additions to knowledge_routes.py/knowledge_store.py; map API/frontend tests, isolated browser helper, knowledge-map guide and updated engine/open-source documentation
+- README, requirements, SQLite schema, Qwen extraction, BGE-M3 identity, original AI/RAG/parsing services and model defaults remain unchanged; no paid API, cloud storage, framework or Step 16 functionality was added
+
 ## In Progress
 - None
 
 ## Next Step
-- Manually accept the Step 14 APIs using `docs/KNOWLEDGE_ENGINE.md`; wait for explicit authorization before Step 15
+- Manually accept Step 15 using `docs/KNOWLEDGE_MAP.md`; wait for explicit authorization before Step 16
 
 ## Important Decisions
 - Development will be incremental.
@@ -234,14 +255,18 @@ Step 14 local Knowledge Engine complete and verified; GitHub publication authori
 - Topic classification follows the pair's application context; sharing a topic never authorizes merging two concepts.
 - Concept merges require a local Qwen identity decision, not a cosine threshold alone. Definitions and relationship evidence remain associated with their journal sources.
 - Knowledge jobs and graph writes use the same local SQLite file, atomic transactions, bounded retries and lease-token checks; no agent framework or external queue service was added.
+- Knowledge Map is a read-only projection, not a second knowledge store. Topic membership never implies a knowledge relationship, and dragged positions/collapse state are not persisted.
+- Cytoscape's built-in layouts cover both map modes without extensions, npm tooling, runtime CDN access or a new frontend framework.
 
 ## Known Issues
+- Knowledge Map displays one topic at a time and caps its visible subset at 500 concepts/2,000 internal edges; search covers loaded nodes only, and cross-topic edges are not drawn. Dense graphs may require zoom/search.
+- The real Step 14 corpus has no part_of edge, so deeper component-branch behavior is verified with isolated fixtures rather than claimed as real-model output. Stored content is not automatically translated by the bilingual UI.
 - Model extraction/classification is probabilistic. Conservative matching can leave duplicates and strict source checks can omit valid relationships; the real six-question corpus retained only one directly supported edge.
 - Background inference shares local hardware and cannot preempt an already-running Ollama call. A single Uvicorn process is recommended; foreground-idle accounting is process-local.
 - Knowledge extraction bounds each model input to 800 question characters, 2,200 answer characters and 12 existing topics; nodes have one primary topic, and incompatible embedding configurations fail safely pending a future reindexing tool.
-- Final desktop/mobile visual checks, Step 13 click interactions and browser download behavior need manual acceptance because Windows browser automation stopped at its URL-confidence check.
+- Step 13 full Journal click/download acceptance still remains manual; Step 15 map interactions and desktop/mobile navigation were actually verified through the now-available Edge browser connection.
 - An existing Quiz validator rejects valid multiline code options as control characters. A real Python-loops test exposed this; a code-free conceptual Quiz passed. `app/ai_service.py` was left unchanged because fixing Quiz math/text validation is outside Step 13.
-- Real application screenshots have not yet been captured, so the README intentionally contains no screenshot section or broken placeholder links.
+- Portfolio screenshots are not committed and README has no screenshot section; Step 15 browser proof was captured only as an ignored local verification artifact.
 - There is no public hosted demo; reviewers currently need local Ollama and both documented models.
 - A project-level license has not yet been selected; original code is not automatically available for reuse until the repository owner adds one.
 - Local quiz generation took roughly 10–20 seconds in warm-model tests and may be slower after a cold start.
