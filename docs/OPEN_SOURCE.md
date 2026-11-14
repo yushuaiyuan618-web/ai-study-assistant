@@ -13,6 +13,8 @@ AI Study Assistant intentionally builds on mature open-source software and open 
 | BGE-M3 | Multilingual document and query embeddings | MIT | [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) |
 | OpenAI Python SDK | Compatibility client pointed only at local Ollama by default | Apache-2.0 | [openai/openai-python](https://github.com/openai/openai-python) |
 | pypdf | Embedded-text extraction from PDF files | BSD-3-Clause | [py-pdf/pypdf](https://github.com/py-pdf/pypdf) |
+| ReportLab | Local Learning Journal PDF layout, wrapping, pagination and embedded font subsets | BSD-3-Clause | [ReportLab](https://docs.reportlab.com/reportlab/userguide/ch5_platypus/) |
+| Noto Sans SC | Embedded Simplified Chinese, English and symbol glyphs in journal PDFs | SIL OFL 1.1 | [google/fonts](https://github.com/google/fonts/tree/main/ofl/notosanssc) |
 | NumPy | Vector normalization and exact cosine similarity | BSD-3-Clause (primary project license) | [numpy/numpy](https://github.com/numpy/numpy) |
 | semantic-text-splitter | Boundary-aware text and Markdown chunking | MIT | [benbrandt/text-splitter](https://github.com/benbrandt/text-splitter) |
 | KaTeX 0.18.4 | Safe local rendering of model-generated mathematical notation | MIT | [KaTeX/KaTeX](https://github.com/KaTeX/KaTeX) |
@@ -42,6 +44,7 @@ Licenses listed here were checked against official repositories/model cards and 
 - Local RAG indexing, retrieval policy, grounded prompting, and source attribution
 - Prompt-injection boundaries for untrusted documents
 - Safe Markdown/math/plain-text rendering and responsive product UX
+- Local SQLite Learning Journal, user-controlled difficulty marks and bilingual PDF exports
 
 ## Project-Level License Review
 

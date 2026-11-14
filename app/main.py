@@ -33,10 +33,13 @@ from app.rag_service import (
     index_document,
     remove_document_index,
 )
+from app.journal_routes import router as journal_router
+from app.journal_service import record_answer
 
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="AI Study Assistant")
+app.include_router(journal_router)
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 quiz_store = {}
 
@@ -142,7 +145,10 @@ def chat(chat_request: ChatRequest):
     except AIServiceError as error:
         raise _ai_http_error(error) from error
 
-    return {"reply": reply}
+    return {
+        "reply": reply,
+        "journal_status": record_answer(chat_request.message.strip(), reply, "chat"),
+    }
 
 
 @app.post("/api/explain")
@@ -160,7 +166,7 @@ def explain(explain_request: ExplainRequest):
     except AIServiceError as error:
         raise _ai_http_error(error) from error
 
-    return {"reply": reply}
+    return {"reply": reply, "journal_status": record_answer(topic, reply, "explain")}
 
 
 @app.post("/api/quiz/generate")
@@ -295,7 +301,7 @@ def ask_documents(document_request: DocumentAskRequest):
         raise HTTPException(status_code=404, detail="document_not_found")
 
     try:
-        return answer_document_question(
+        answer = answer_document_question(
             question,
             document_request.document_ids,
             document_request.language,
@@ -304,6 +310,11 @@ def ask_documents(document_request: DocumentAskRequest):
         raise _rag_http_error(error) from error
     except AIServiceError as error:
         raise _ai_http_error(error) from error
+
+    answer["journal_status"] = record_answer(
+        question, answer["reply"], "rag", answer.get("sources", [])
+    )
+    return answer
 
 
 @app.delete("/api/documents/{document_id}")

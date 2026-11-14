@@ -6,3 +6,4 @@ pypdf
 python-multipart
 numpy
 semantic-text-splitter
+reportlab>=4.4,<6

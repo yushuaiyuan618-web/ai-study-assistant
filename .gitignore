@@ -31,3 +31,14 @@ htmlcov/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Local learning records and SQLite sidecar files
+data/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Generated verification artifacts
+tmp/
+output/

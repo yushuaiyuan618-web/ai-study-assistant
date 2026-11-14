@@ -51,6 +51,12 @@
                     </svg>
                     <span data-i18n="documents">Documents</span>
                 </button>
+                <button class="nav-item" type="button" data-view="journal">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 3h14v18H5zM9 7h6M9 11h6M9 15h4"></path>
+                    </svg>
+                    <span data-i18n="journal">Learning Journal</span>
+                </button>
             </nav>
 
             <p class="sidebar-footer" data-i18n="sidebarFooter">AI-powered personalized learning</p>
@@ -73,6 +79,7 @@
                         <option value="quiz" data-i18n="quiz">Quiz</option>
                         <option value="study-plan" data-i18n="studyPlan">Study Plan</option>
                         <option value="documents" data-i18n="documents">Documents</option>
+                        <option value="journal" data-i18n="journal">Learning Journal</option>
                     </select>
 
                     <div class="language-switcher" role="group" aria-label="Language selection" data-i18n-aria-label="languageSelection">
@@ -82,6 +89,7 @@
                     </div>
                 </div>
             </header>
+            <p class="journal-capture-warning" id="journalCaptureWarning" role="status" hidden></p>
 
             <section class="chat-area" id="chatArea" aria-label="Chat messages" data-i18n-aria-label="chatMessages">
                 <div class="welcome-section" id="welcomeSection">
@@ -487,6 +495,72 @@
                 </div>
             </section>
 
+            <section class="journal-view" id="journalView" aria-labelledby="journalTitle" hidden>
+                <div class="journal-container">
+                    <header class="journal-heading">
+                        <h2 id="journalTitle" data-i18n="journal">Learning Journal</h2>
+                        <p data-i18n="journalSubtitle">Revisit what you learned. Keep the difficult questions close.</p>
+                    </header>
+                    <label class="journal-record-toggle">
+                        <input type="checkbox" id="journalAutoRecord" disabled>
+                        <span data-i18n="journalAutoRecord">Automatically save successful answers</span>
+                    </label>
+                    <p class="journal-hint" data-i18n="journalLocalHint">Chat, Explain and document answers are saved on this computer.</p>
+                    <dl class="journal-stats">
+                        <div><dt data-i18n="journalTotal">Total records</dt><dd id="journalTotal">0</dd></div>
+                        <div><dt data-i18n="journalNormal">Regular records</dt><dd id="journalNormal">0</dd></div>
+                        <div><dt data-i18n="journalStarred">Important difficulties</dt><dd id="journalStarred">0</dd></div>
+                    </dl>
+                    <form class="journal-filters" id="journalFilters">
+                        <label><span data-i18n="journalShow">Show</span>
+                            <select id="journalKind">
+                                <option value="all" data-i18n="journalAll">All records</option>
+                                <option value="starred" data-i18n="journalStarred">Important difficulties</option>
+                                <option value="normal" data-i18n="journalNormal">Regular records</option>
+                            </select>
+                        </label>
+                        <label><span data-i18n="journalFrom">From</span><input type="date" id="journalFrom"></label>
+                        <label><span data-i18n="journalTo">Through</span><input type="date" id="journalTo"></label>
+                        <label><span data-i18n="journalOrder">Order</span>
+                            <select id="journalOrder">
+                                <option value="newest" data-i18n="journalNewest">Newest first</option>
+                                <option value="oldest" data-i18n="journalOldest">Oldest first</option>
+                            </select>
+                        </label>
+                        <button class="journal-secondary" type="reset" data-i18n="journalReset">Reset filters</button>
+                    </form>
+                    <div class="journal-toolbar">
+                        <label class="visually-hidden" for="journalExportScope" data-i18n="journalExportScope">Export scope</label>
+                        <select id="journalExportScope">
+                            <option value="filtered" data-i18n="journalExportFiltered">Current filter (all matching records)</option>
+                            <option value="all" data-i18n="journalExportAll">All records</option>
+                        </select>
+                        <button class="journal-export" id="journalExport" type="button" data-i18n="journalExport" disabled>Export PDF</button>
+                        <button class="journal-secondary" id="journalRefresh" type="button" data-i18n="journalRefresh">Refresh</button>
+                        <button class="journal-secondary journal-clear" id="journalClear" type="button" data-i18n="journalClear" disabled>Clear all records</button>
+                    </div>
+                    <p class="journal-message" id="journalMessage" role="status" hidden></p>
+                    <p class="journal-empty" id="journalEmpty" data-i18n="journalEmpty" hidden>No records match this view yet.</p>
+                    <div id="journalList"></div>
+                    <nav class="journal-pagination" aria-label="Journal pages" data-i18n-aria-label="journalPages">
+                        <button class="journal-secondary" id="journalPrevious" type="button" data-i18n="journalPrevious" disabled>Previous</button>
+                        <span id="journalPageStatus" aria-live="polite"></span>
+                        <button class="journal-secondary" id="journalNext" type="button" data-i18n="journalNext" disabled>Next</button>
+                    </nav>
+                </div>
+            </section>
+
+            <dialog class="journal-confirm" id="journalClearDialog" aria-labelledby="journalClearTitle">
+                <form method="dialog">
+                    <h3 id="journalClearTitle" data-i18n="journalClearTitle">Clear your learning journal?</h3>
+                    <p data-i18n="journalClearDescription">This permanently deletes every record, including hidden or filtered records.</p>
+                    <div class="journal-dialog-actions">
+                        <button class="journal-secondary" value="cancel" data-i18n="journalCancel" autofocus>Cancel</button>
+                        <button class="journal-danger" value="confirm" data-i18n="journalConfirmClear">Delete all records</button>
+                    </div>
+                </form>
+            </dialog>
+
             <footer class="input-area" id="chatInputArea">
                 <form class="chat-form" id="chatForm" aria-busy="false">
                     <label class="visually-hidden" for="messageInput" data-i18n="inputLabel">Study question</label>
@@ -505,6 +579,7 @@
     </div>
 
     <script src="vendor/katex/katex.min.js"></script>
+    <script src="journal.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

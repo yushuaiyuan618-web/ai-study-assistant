@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 12 portfolio packaging and final Quiz math polish ready for manual review
+Step 13 Learning Journal implemented and tested; GitHub publication approved by the user
 
 ## Completed
 - Git repository initialized
@@ -127,11 +127,27 @@ Step 12 portfolio packaging and final Quiz math polish ready for manual review
 - Pydantic validation now rejects control-character-corrupted or bare undelimited LaTeX commands and uses the existing safe structured-output retry rather than silently rewriting model answers
 - Required KaTeX expressions, Markdown/code exclusions, deterministic 1 / 2 / 2.01 scoring, malformed notation rejection, static assets, Python/JavaScript syntax, and a live Qwen structured calculus quiz all passed
 
+- Step 13 adds an independent bilingual Learning Journal mode in desktop and mobile navigation
+- Successful Chat, Explain and RAG answers are captured in the backend with UUID, original question/answer, UTC timestamp, mode and RAG source metadata; failed and empty requests are excluded
+- Local SQLite stores records and the auto-recording preference across restarts using parameterized SQL, short transactions and per-operation connections; database files and sidecars are ignored by Git
+- Users can toggle automatic recording, expand answers, star/unstar important difficulties, filter by mark/local dates, sort by time, page through records, delete one record and confirm clearing all records
+- Counts show total, regular and important records; marked titles and filled stars are red and normal titles remain neutral
+- ReportLab provides local PDF exports for all records or the entire filtered selection, independent of list pagination, with a cover, counts, important-first sections, original Q&A, dates/modes, source filenames and page numbers
+- A bundled Noto Sans SC static font with SIL OFL notice is subset-embedded for reliable offline Chinese, English and star rendering; FontTools is not a runtime dependency
+- PDF model text is escaped before layout; browser answers reuse the existing safe Markdown/KaTeX renderer; recording failure warns without discarding a completed answer
+- Fourteen Python integration/storage/PDF tests and five frontend DOM/translation/date/confirmation/layout-contract groups passed; a new process can read persisted records and settings
+- An actual Uvicorn restart retained all three isolated live-test records and the disabled auto-recording preference; the test setting was restored afterward
+- English and Chinese nine-page PDF fixtures and a six-page continuous-text/long-URL fixture passed extraction and page-position checks; rendered cover, red star/title, normal section and continuation samples were visually inspected
+- Real local regressions passed Chat and multi-turn context, Chinese Explain, conceptual Quiz generation/submission, a validated 7-day Study Plan, TXT parsing, BGE-M3 indexing, grounded RAG/citations, document removal and automatic capture with mode isolation
+- Step 13 changes: `app/main.py`, new `app/journal_service.py`, `app/journal_routes.py`, `app/journal_pdf.py`, frontend navigation/styles/integration and new `frontend/journal.js`, `assets/fonts/`, `requirements.txt`, `.gitignore`, `tests/`, `docs/LEARNING_JOURNAL.md`, `docs/OPEN_SOURCE.md` and this status file
+- Python compilation, both JavaScript syntax checks, dependency consistency and Git whitespace checks passed; README and AI/embedding/parsing services remain unchanged, with no paid API or cloud storage introduced
+- The user approved committing and publishing Step 13 to the existing GitHub repository on 2026-11-14
+
 ## In Progress
-- None
+- Manual Step 13 desktop/mobile browser acceptance remains; browser automation ended when its tool could not reliably identify the current URL
 
 ## Next Step
-- Manually review Quiz math rendering, real screenshots, responsive browser behavior, repository metadata, and the project-level license choice before creating an optional `v1.0.0` release
+- Complete any remaining browser checks in `docs/LEARNING_JOURNAL.md`; wait for user authorization before starting another development step
 
 ## Important Decisions
 - Development will be incremental.
@@ -187,9 +203,14 @@ Step 12 portfolio packaging and final Quiz math polish ready for manual review
 - No project-level license was added automatically because licensing original code is an owner/legal decision; third-party licenses are documented independently.
 - Step 12 introduces no deployment container, hosted inference provider, paid API, database, authentication, or new product mode.
 - KaTeX is served locally with its MIT license; untrusted model math uses `trust: false`, bounded size/expansion, and safe text fallback.
+- Learning Journal is a separate single-user local archive; it does not restore or inject persisted records into Chat conversation memory or the document retrieval index.
+- Auto-recording defaults to on and its preference is persisted in SQLite. Existing records are not removed when it is switched off.
+- PDF exports preserve original Markdown/LaTeX as readable source text; browser journal answers retain rendered Markdown/math. PDF generation never invokes the AI.
+- Step 13 adds ReportLab as the only direct runtime dependency and uses Python's built-in SQLite instead of an ORM or database server.
 
 ## Known Issues
-- Automated browser interaction was unavailable, so Step 11 desktop/tablet/mobile behavior and the final KaTeX visual appearance need manual confirmation.
+- Final desktop/mobile visual checks, Step 13 click interactions and browser download behavior need manual acceptance because Windows browser automation stopped at its URL-confidence check.
+- An existing Quiz validator rejects valid multiline code options as control characters. A real Python-loops test exposed this; a code-free conceptual Quiz passed. `app/ai_service.py` was left unchanged because fixing Quiz math/text validation is outside Step 13.
 - Real application screenshots have not yet been captured, so the README intentionally contains no screenshot section or broken placeholder links.
 - There is no public hosted demo; reviewers currently need local Ollama and both documented models.
 - A project-level license has not yet been selected; original code is not automatically available for reuse until the repository owner adds one.

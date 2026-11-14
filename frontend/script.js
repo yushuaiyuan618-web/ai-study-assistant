@@ -70,6 +70,7 @@ const documentSourceList = document.querySelector("#documentSourceList");
 
 const translations = {
     en: {
+        ...journalTranslations.en,
         pageTitle: "AI Study Assistant",
         appName: "AI Study Assistant",
         mainNavigation: "Main navigation",
@@ -218,6 +219,7 @@ const translations = {
         connectionError: "Unable to connect to the server. Please make sure the backend is running."
     },
     zh: {
+        ...journalTranslations.zh,
         pageTitle: "AI 学习助手",
         appName: "AI 学习助手",
         mainNavigation: "主导航",
@@ -448,6 +450,7 @@ function applyLanguage(language) {
     updateQuizLocalizedText();
     updateStudyPlanLocalizedText();
     updateDocumentLocalizedText();
+    updateJournalLocalizedText();
 
     localStorage.setItem("studyAssistantLanguage", language);
 }
@@ -570,6 +573,7 @@ function setActiveView(view) {
     const isQuizView = view === "quiz";
     const isStudyPlanView = view === "study-plan";
     const isDocumentsView = view === "documents";
+    const isJournalView = view === "journal";
 
     chatArea.hidden = !isChatView;
     chatInputArea.hidden = !isChatView;
@@ -577,6 +581,7 @@ function setActiveView(view) {
     quizView.hidden = !isQuizView;
     studyPlanView.hidden = !isStudyPlanView;
     documentsView.hidden = !isDocumentsView;
+    journalView.hidden = !isJournalView;
     mobileViewSelect.value = view;
 
     viewButtons.forEach((button) => {
@@ -600,6 +605,8 @@ function setActiveView(view) {
         studyPlanGoal.focus();
     } else if (isDocumentsView) {
         (uploadedDocuments.length ? documentQuestion : documentInput).focus();
+    } else if (isJournalView) {
+        loadJournal();
     }
 }
 
@@ -1054,6 +1061,7 @@ async function sendMessage() {
         loadingMessage.remove();
         displayAssistantMessage(data.reply);
         rememberSuccessfulTurn(message, data.reply);
+        handleJournalStatus(data.journal_status);
     } catch {
         loadingMessage.remove();
         displayAssistantMessage(
@@ -1109,6 +1117,7 @@ async function requestExplanation() {
 
         const data = await response.json();
         displayExplainOutput(data.reply);
+        handleJournalStatus(data.journal_status);
     } catch {
         displayExplainOutput(
             translations[currentLanguage].explainError,
@@ -1790,6 +1799,7 @@ async function askDocumentQuestion() {
 
         clearDocumentAskMessage();
         renderDocumentAnswer(data);
+        handleJournalStatus(data.journal_status);
     } catch {
         showDocumentAskMessage(errorTranslationKey, "error");
     } finally {
@@ -2124,3 +2134,4 @@ studyDurationButtons.forEach((button) => {
 
 applyLanguage(currentLanguage);
 updateDocumentEmptyState();
+initializeJournal();
