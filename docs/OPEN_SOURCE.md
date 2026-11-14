@@ -45,6 +45,7 @@ Licenses listed here were checked against official repositories/model cards and 
 - Prompt-injection boundaries for untrusted documents
 - Safe Markdown/math/plain-text rendering and responsive product UX
 - Local SQLite Learning Journal, user-controlled difficulty marks and bilingual PDF exports
+- Local knowledge extraction with source-preserving concept identity checks, evidence-grounded relations and a durable SQLite background queue
 
 ## Project-Level License Review
 

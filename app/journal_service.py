@@ -24,6 +24,7 @@ def _connection():
         DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(DATABASE_PATH, timeout=5)
         connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
         connection.executescript("""
             CREATE TABLE IF NOT EXISTS journal_entries (
                 id TEXT PRIMARY KEY,
@@ -41,6 +42,9 @@ def _connection():
             );
             INSERT OR IGNORE INTO journal_settings (id, auto_record) VALUES (1, 1);
         """)
+        from app.knowledge_store import initialize_schema
+        initialize_schema(connection)
+        connection.commit()
         with connection:
             yield connection
     except (sqlite3.Error, OSError) as error:

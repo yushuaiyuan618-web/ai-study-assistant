@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Literal
 from uuid import uuid4
@@ -35,13 +36,48 @@ from app.rag_service import (
 )
 from app.journal_routes import router as journal_router
 from app.journal_service import record_answer
+from app.knowledge_routes import router as knowledge_router
+from app.knowledge_worker import KnowledgeWorker
 
 
 logger = logging.getLogger(__name__)
-app = FastAPI(title="AI Study Assistant")
+
+
+@asynccontextmanager
+async def lifespan(application):
+    worker = KnowledgeWorker()
+    application.state.knowledge_worker = worker
+    worker.start()
+    try:
+        yield
+    finally:
+        worker.stop()
+        application.state.knowledge_worker = None
+
+
+app = FastAPI(title="AI Study Assistant", lifespan=lifespan)
 app.include_router(journal_router)
+app.include_router(knowledge_router)
 frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
 quiz_store = {}
+
+AI_REQUEST_PATHS = {
+    "/api/chat", "/api/explain", "/api/quiz/generate", "/api/study-plan",
+    "/api/documents/upload", "/api/documents/ask",
+}
+
+
+@app.middleware("http")
+async def prioritize_learning_requests(request, call_next):
+    worker = getattr(request.app.state, "knowledge_worker", None)
+    foreground = worker is not None and request.url.path in AI_REQUEST_PATHS
+    if foreground:
+        worker.request_started()
+    try:
+        return await call_next(request)
+    finally:
+        if foreground:
+            worker.request_finished()
 
 
 class ConversationMessage(BaseModel):

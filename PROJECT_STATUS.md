@@ -1,7 +1,7 @@
 # AI Study Assistant - Project Status
 
 ## Current Stage
-Step 13 Learning Journal implemented and tested; GitHub publication approved by the user
+Step 14 local Knowledge Engine complete and verified; GitHub publication authorized by the user
 
 ## Completed
 - Git repository initialized
@@ -143,11 +143,34 @@ Step 13 Learning Journal implemented and tested; GitHub publication approved by 
 - Python compilation, both JavaScript syntax checks, dependency consistency and Git whitespace checks passed; README and AI/embedding/parsing services remain unchanged, with no paid API or cloud storage introduced
 - The user approved committing and publishing Step 13 to the existing GitHub repository on 2026-11-14
 
+- Step 14 reuses the Step 13 SQLite journal and source IDs; no second copy of complete questions/answers is stored
+- New `topics`, `concepts`, `concept_sources`, `concept_relations`, `relation_sources`, `knowledge_jobs` and `knowledge_schema` tables persist the local knowledge graph, evidence, schema version and processing state
+- Successful Chat, Explain and RAG journal inserts atomically enqueue extraction; retained pre-Step-14 journal entries are backfilled once without changing text, IDs, dates or stars
+- A lifespan-managed background thread waits for foreground AI requests to become idle, claims one durable job at a time and uses renewed leases to prevent stale or duplicate writes
+- Qwen3.5 4B extracts 1-3 central concepts with definitions, aliases and keywords using the existing JSON Schema/Pydantic helper; a separate small structured decision selects the pair's application topic
+- BGE-M3 and NumPy cosine search nominate up to three concept candidates; local Qwen must explicitly confirm identity, while uncertain concepts remain separate
+- Merges retain the original canonical definition and every source-specific definition; bilingual aliases and original journal associations are preserved
+- Five typed relationships are supported with source IDs, reasons and literal evidence; unknown endpoints, self-relations, unsupported quotes and prerequisite/component cycles are omitted
+- Job APIs expose pending/completed/failed state, attempts and safe bilingual messages; failures retry up to three attempts and can be manually requeued without affecting the original AI answer
+- Journal deletion cascades to jobs and evidence and removes unsupported graph data; a cancelled or stale in-flight job cannot recreate deleted records
+- The Windows migration-test WinError 32 was caused by a test setup connection whose transaction context did not close the connection; explicit `contextlib.closing` fixed it without changing migration behavior or removing assertions
+- The original migration test and an added WAL/SHM cleanup test passed independently and immediately unlinked their SQLite files on Windows; no cleanup exception was ignored
+- All 38 Python tests and five existing frontend DOM regression groups passed, covering migration, source retention, conservative identity, failure/retry, lease recovery, concurrent claims, deletion, lifecycle and existing learning modes
+- Real local Qwen/BGE-M3 verification passed all six required machine-learning questions, an English repeat, a Chinese repeat, background small-talk filtering and fresh-process graph persistence
+- The final real-model run produced one Machine Learning topic and eight nodes; five core concepts remained distinct, Forward/Backward Propagation remained separate, and English/Chinese Gradient Descent reused one ID without overwriting its definition
+- The real-model run retained one traceable `Backpropagation applied_in Gradient Descent` edge; its quote and interpretation were reviewed, while other proposed relationships without strict named-endpoint evidence were omitted
+- Actual Chat responses were returned before queued extraction began; observed extraction times in the final six-question/repeat run were roughly 7-12 seconds per learning pair on this machine
+- Additional real local HTTP regressions passed Chinese Explain, five-question Quiz generation and deterministic 5/5 scoring, a validated 7-day Study Plan, TXT parsing, BGE-M3 retrieval, grounded RAG/source metadata and document removal; Explain/RAG queued the original source IDs while Quiz/Plan created no journal rows
+- Python compilation, dependency consistency and Git whitespace checks passed; the final change set contains only Step 14 backend integrations, modules, tests and documentation
+- `docs/KNOWLEDGE_ENGINE.md` documents source research, SQLite design, processing/retry rules, all eight knowledge APIs, reproducible tests, manual acceptance and limitations
+- Step 14 files: new `app/knowledge_models.py`, `knowledge_ai.py`, `knowledge_store.py`, `knowledge_service.py`, `knowledge_worker.py`, `knowledge_routes.py`; small integrations in `app/main.py` and `app/journal_service.py`; new knowledge tests/live runner and documentation
+- No frontend, README, AI/RAG/document-parsing service, requirements or model defaults were changed; Step 14 adds no dependencies, paid API, cloud database or visualization
+
 ## In Progress
-- Manual Step 13 desktop/mobile browser acceptance remains; browser automation ended when its tool could not reliably identify the current URL
+- None
 
 ## Next Step
-- Complete any remaining browser checks in `docs/LEARNING_JOURNAL.md`; wait for user authorization before starting another development step
+- Manually accept the Step 14 APIs using `docs/KNOWLEDGE_ENGINE.md`; wait for explicit authorization before Step 15
 
 ## Important Decisions
 - Development will be incremental.
@@ -207,8 +230,15 @@ Step 13 Learning Journal implemented and tested; GitHub publication approved by 
 - Auto-recording defaults to on and its preference is persisted in SQLite. Existing records are not removed when it is switched off.
 - PDF exports preserve original Markdown/LaTeX as readable source text; browser journal answers retain rendered Markdown/math. PDF generation never invokes the AI.
 - Step 13 adds ReportLab as the only direct runtime dependency and uses Python's built-in SQLite instead of an ORM or database server.
+- The Knowledge Engine is backend-only and source-driven; disabling new journal capture also prevents new extraction jobs, while retained records remain available to the engine.
+- Topic classification follows the pair's application context; sharing a topic never authorizes merging two concepts.
+- Concept merges require a local Qwen identity decision, not a cosine threshold alone. Definitions and relationship evidence remain associated with their journal sources.
+- Knowledge jobs and graph writes use the same local SQLite file, atomic transactions, bounded retries and lease-token checks; no agent framework or external queue service was added.
 
 ## Known Issues
+- Model extraction/classification is probabilistic. Conservative matching can leave duplicates and strict source checks can omit valid relationships; the real six-question corpus retained only one directly supported edge.
+- Background inference shares local hardware and cannot preempt an already-running Ollama call. A single Uvicorn process is recommended; foreground-idle accounting is process-local.
+- Knowledge extraction bounds each model input to 800 question characters, 2,200 answer characters and 12 existing topics; nodes have one primary topic, and incompatible embedding configurations fail safely pending a future reindexing tool.
 - Final desktop/mobile visual checks, Step 13 click interactions and browser download behavior need manual acceptance because Windows browser automation stopped at its URL-confidence check.
 - An existing Quiz validator rejects valid multiline code options as control characters. A real Python-loops test exposed this; a code-free conceptual Quiz passed. `app/ai_service.py` was left unchanged because fixing Quiz math/text validation is outside Step 13.
 - Real application screenshots have not yet been captured, so the README intentionally contains no screenshot section or broken placeholder links.
