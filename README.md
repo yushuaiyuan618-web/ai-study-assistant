@@ -1,6 +1,6 @@
 # AI Study Assistant
 
-AI Study Assistant is a bilingual, local-first learning web application that combines local LLM inference, structured study workflows, document processing, and retrieval-augmented generation without a paid AI API dependency.
+AI Study Assistant is a bilingual, local-first learning web application. It combines an AI tutor, quizzes, study plans, and document-grounded answers with a persistent learning journal and an interactive knowledge map. Generation and embeddings run locally through Ollama.
 
 ## Why I Built This
 
@@ -14,6 +14,9 @@ This project explores practical AI in education beyond generic chat. It combines
 - **Study Plan** — personalized, validated 7-day or 30-day plans based on a goal, current level, and daily time budget.
 - **Documents** — local extraction and preview for PDF, UTF-8 TXT, and Markdown files.
 - **Local RAG** — multilingual embeddings, semantic retrieval, grounded answers, and source attribution over selected documents.
+- **Learning Journal** — automatically saves successful Chat, Explain, and document Q&A in local SQLite. Star difficult entries, filter the journal, and export all or matching records to PDF with English and Chinese support.
+- **Knowledge Engine** — extracts concepts and supported relationships from recorded Q&A in the background, organizes concepts by topic, and links them to journal entries.
+- **Knowledge Map** — explore each topic in Mind Map or Knowledge Graph view. Search concept names, aliases, and keywords, inspect definitions and relationships, and use zoom and pan to navigate.
 
 The interface and generated content can switch between English and Simplified Chinese.
 
@@ -47,11 +50,19 @@ flowchart LR
     Index -->|top relevant chunks| RAG
     RAG -->|grounded context| AI
 
+    API -->|successful learning answers| Journal[Learning Journal]
+    Journal -->|entries and extraction jobs| SQLite[(Local SQLite)]
+    SQLite -->|queued questions and answers| Worker[Background knowledge worker]
+    Worker --> AI
+    Worker --> BGE
+    Worker -->|concepts, topics, and relations| SQLite
+    API -->|read journal and knowledge data| SQLite
+
     Qwen -->|answer or structured data| API
     API -->|result and source metadata| Browser
 ```
 
-The frontend owns view state and current chat history. FastAPI validates requests and separates AI generation, document parsing, and retrieval into focused services. Quiz sessions, parsed documents, chunks, and embeddings are temporary in-process state.
+The frontend owns view state and current chat context. FastAPI validates requests and separates AI generation, document parsing, retrieval, journal storage, and knowledge extraction into focused services. Quiz sessions and document indexes live in process memory. Journal entries, preferences, extraction jobs, and the resulting knowledge graph persist in the local SQLite database.
 
 For a deeper explanation, see [Architecture](docs/ARCHITECTURE.md).
 
@@ -71,12 +82,14 @@ Only retrieved excerpts are sent to the generation model. If no chunk passes the
 
 | Area | Technology |
 | --- | --- |
-| Frontend | HTML, CSS, Vanilla JavaScript |
+| Frontend | HTML, CSS, vanilla JavaScript, locally bundled KaTeX and Cytoscape.js |
 | Backend / validation | Python, FastAPI, Pydantic |
 | Local generation | Ollama, Qwen3.5 4B |
 | Local embeddings | Ollama, BGE-M3 |
 | Retrieval | semantic-text-splitter, NumPy cosine similarity |
 | Document parsing | pypdf, local UTF-8 text parsing |
+| Journal and knowledge storage | SQLite via Python's `sqlite3` |
+| Journal PDF export | ReportLab and an embedded Noto Sans SC font |
 | Model client | OpenAI Python SDK against local Ollama only |
 | Development server | Uvicorn |
 
@@ -87,13 +100,18 @@ app/
 ├── main.py               # FastAPI routes and request validation
 ├── ai_service.py         # Ollama generation, embeddings, prompts, and AI errors
 ├── document_service.py   # Safe PDF/TXT/MD parsing and temporary documents
-└── rag_service.py        # Chunking, indexing, retrieval, and source metadata
+├── rag_service.py        # Chunking, indexing, retrieval, and source metadata
+├── journal_*.py          # Journal routes, storage, and PDF export
+└── knowledge_*.py        # Background extraction, storage, and read APIs
 frontend/
 ├── index.html            # Semantic application views
 ├── style.css             # Responsive product layout
-└── script.js             # Bilingual UI, API calls, state, and safe rendering
+├── script.js             # Bilingual UI, API calls, state, and safe rendering
+├── journal.js            # Journal controls and PDF export
+└── knowledge-map.js      # Mind map and knowledge graph interactions
 docs/                     # Architecture, testing, deployment, and portfolio notes
 examples/                 # Non-sensitive sample material for RAG testing
+tests/                    # Python and JavaScript feature checks
 requirements.txt          # Direct Python runtime dependencies
 .env.example              # Safe local configuration template
 ```
@@ -181,6 +199,15 @@ Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/). The health endpoint is [h
 
 For a shorter tester-focused walkthrough, see [Tester Guide](docs/TESTER_GUIDE.md).
 
+## Build Your Knowledge Map
+
+1. In **Learning Journal**, leave automatic recording enabled. Ask a focused learning question in **AI Chat**, **Explain**, or **Documents** and confirm that the answer appears in the journal.
+2. Star the entry to mark it as an important difficulty. Choose an export scope and select **Export PDF** to save a local copy.
+3. Give the background worker time to process the recorded answer. Open **Knowledge Map**, click **Refresh data**, and select a topic after one appears.
+4. Switch between **Mind Map** and **Knowledge Graph**. Select a concept to inspect its definition, or search for a concept by name, alias, or keyword.
+
+The map starts empty. Background extraction uses the same local models as the learning modes, and graphs show relationships supported by the recorded material. [Knowledge Map Guide](docs/KNOWLEDGE_MAP.md)
+
 ## Engineering Decisions
 
 - **Ollama** keeps inference local and exposes a stable API without coupling the frontend to a model runtime.
@@ -189,32 +216,32 @@ For a shorter tester-focused walkthrough, see [Tester Guide](docs/TESTER_GUIDE.m
 - **NumPy retrieval** is easier to inspect than a vector database and is sufficient for the deliberate 10-document in-memory limit.
 - **FastAPI and Pydantic** keep API contracts and untrusted structured model output explicit.
 - **Vanilla JavaScript** keeps the learning UI lightweight and makes state transitions visible without a framework.
-- **In-memory storage** avoids premature database complexity in v1; persistence is a documented future boundary.
+- **Storage by feature** keeps uploaded documents and their search indexes temporary, while SQLite persists the journal and knowledge graph across restarts.
 
 ## Open Source and Project-Specific Work
 
 The project intentionally integrates mature open-source tools rather than claiming to create the underlying models or libraries.
 
-**Reused:** Ollama, Qwen3.5, BGE-M3, FastAPI, pypdf, semantic-text-splitter, NumPy, and the OpenAI-compatible Python client.
+**Reused:** Ollama, Qwen3.5, BGE-M3, FastAPI, pypdf, semantic-text-splitter, NumPy, the OpenAI-compatible Python client, SQLite, ReportLab, KaTeX, and Cytoscape.js.
 
-**Project-specific engineering:** provider integration, bilingual learning workflows, bounded multi-turn context, structured Quiz and Study Plan validation, deterministic grading, document ingestion, local RAG orchestration, source attribution, trust boundaries, frontend state, safe rendering, and responsive UX.
+**Project-specific engineering:** bilingual learning workflows, bounded chat context, structured output validation, deterministic grading, local RAG with citations, journal capture and PDF export, durable knowledge extraction, and two interactive views of the stored graph.
 
 See [Open-Source Acknowledgements](docs/OPEN_SOURCE.md) for licenses and links.
 
 ## Current Limitations
 
 - Ollama and both models must be installed locally; speed depends on the user's hardware.
-- Chat history, quiz sessions, plans, documents, and the RAG index are not persistently stored.
-- Restarting FastAPI removes uploaded documents and embeddings; refreshing the page removes frontend-only state.
+- Refreshing the page clears active chat context and study plans. Restarting FastAPI clears unfinished quizzes, uploaded documents, and their indexes. Saved journal entries and extracted knowledge stay in `data/learning_journal.sqlite3`.
 - PDF support extracts embedded text only; scanned/image-only PDFs require OCR, which is not included.
 - Uploads are limited to PDF, UTF-8 TXT, and Markdown, with at most 10 temporary documents of 10 MB each.
 - Retrieval uses an exact in-memory search and has not been benchmarked for production-scale corpora.
+- Knowledge extraction depends on the local model and can miss concepts or relationships. The map shows one topic at a time, up to 500 concepts and 2,000 relationships within that topic.
 - Generated learning content can still be incorrect and should be reviewed for high-stakes study.
 - There is currently no hosted public demo; the architecture is best represented through local testing.
 
 ## Future Work
 
-- Persistent user and document storage
+- Persistent document storage and indexes
 - OCR and additional study-material formats
 - Retrieval evaluation, reranking, and larger-corpus indexing
 - Automated quality benchmarks for learning content and RAG grounding
@@ -224,6 +251,9 @@ See [Open-Source Acknowledgements](docs/OPEN_SOURCE.md) for licenses and links.
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Tester Guide](docs/TESTER_GUIDE.md)
+- [Learning Journal and PDF Export](docs/LEARNING_JOURNAL.md)
+- [Local Knowledge Engine](docs/KNOWLEDGE_ENGINE.md)
+- [Interactive Knowledge Map](docs/KNOWLEDGE_MAP.md)
 - [Deployment Research](docs/DEPLOYMENT.md)
 - [Open-Source Acknowledgements](docs/OPEN_SOURCE.md)
 - [Portfolio and Interview Material](docs/PORTFOLIO.md)

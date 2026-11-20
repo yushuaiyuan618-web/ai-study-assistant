@@ -122,7 +122,23 @@ Also try:
 
 For an unrelated question, the app should say that the selected material does not provide enough information.
 
-### 6. Chinese Mode
+### 6. Learning Journal and PDF Export
+
+1. Open **Learning Journal** and check that automatic recording is enabled.
+2. Generate an answer in **AI Chat**, **Explain**, or **Documents**, then return to the journal and expand the new entry.
+3. Star the entry, select the **Important difficulties** filter, and export the current filter with **Export PDF**.
+
+The expanded entry shows the original question and answer. The PDF includes the starred entry and, for a grounded document answer, its source information. [Learning Journal checks](LEARNING_JOURNAL.md)
+
+### 7. Knowledge Map
+
+1. With journal recording enabled, ask a focused question in **Explain**, such as `How does learning rate affect gradient descent?`
+2. Let foreground generation finish and give the background worker time to process the journal entry. Open **Knowledge Map** and select **Refresh data**.
+3. Select an available topic, inspect a concept in **Mind Map**, then switch to **Knowledge Graph**. Try searching by concept name or keyword.
+
+A new database starts with an empty map. Relationships appear when the engine finds support in the recorded material. [Knowledge Map checks](KNOWLEDGE_MAP.md)
+
+### 8. Chinese Mode
 
 Switch the interface to **中文**, then ask:
 

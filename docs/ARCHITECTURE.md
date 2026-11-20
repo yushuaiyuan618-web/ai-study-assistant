@@ -2,12 +2,12 @@
 
 ## System Overview
 
-AI Study Assistant is a single-process FastAPI application with a static HTML/CSS/JavaScript client and a separate local Ollama process. It favors explicit services and temporary in-memory state over framework-heavy orchestration.
+AI Study Assistant is a single-process FastAPI application with a static HTML/CSS/JavaScript client and a separate local Ollama process. It keeps active learning sessions and document indexes in memory and uses SQLite for the learning journal and knowledge engine.
 
 ```mermaid
 flowchart TB
     subgraph Browser
-        Views[Chat / Explain / Quiz / Study Plan / Documents]
+        Views[Chat / Explain / Quiz / Study Plan / Documents / Learning Journal / Knowledge Map]
         FrontState[View state, language, chat history]
         SafeRender[DOM-based text and Markdown rendering]
         Views <--> FrontState
@@ -22,6 +22,10 @@ flowchart TB
         QuizStore[(Temporary quiz store)]
         DocumentStore[(Temporary document store)]
         VectorStore[(Temporary NumPy indexes)]
+        Journal[Journal service and PDF export]
+        KnowledgeAPI[Knowledge read APIs]
+        Worker[Background knowledge worker]
+        SQLite[(Local SQLite database)]
 
         Routes --> AIService
         Routes --> DocumentService
@@ -29,6 +33,12 @@ flowchart TB
         Routes <--> QuizStore
         DocumentService <--> DocumentStore
         RAGService <--> VectorStore
+        Routes --> Journal
+        Routes --> KnowledgeAPI
+        Journal <--> SQLite
+        KnowledgeAPI --> SQLite
+        Worker <--> SQLite
+        Worker --> AIService
     end
 
     subgraph Local_Ollama[Local Ollama]
@@ -39,12 +49,13 @@ flowchart TB
     Views <-->|HTTP / JSON| Routes
     AIService <--> Qwen
     RAGService <--> BGE
+    Worker <--> BGE
     RAGService -->|retrieved source context| AIService
 ```
 
 ## Frontend
 
-`frontend/index.html` contains five semantic views in one application shell. `frontend/script.js` switches views without reloading, maintains isolated feature state, translates UI strings, and calls the FastAPI endpoints. `frontend/style.css` constrains the app to the viewport so the header/sidebar remain stable while only the active view scrolls.
+`frontend/index.html` contains seven semantic views in one application shell. `frontend/script.js` switches views without reloading, maintains isolated feature state, translates UI strings, and calls the FastAPI endpoints. `frontend/journal.js` manages journal controls and exports. `frontend/knowledge-map.js` uses locally bundled Cytoscape.js to render the Mind Map and Knowledge Graph. `frontend/style.css` constrains the app to the viewport so the header/sidebar remain stable while only the active view scrolls.
 
 Important state boundaries:
 
@@ -58,17 +69,19 @@ Important state boundaries:
 
 `app/main.py` defines the public HTTP boundary and uses Pydantic for request validation.
 
-| Endpoint | Purpose | Persistent state |
+| Endpoint | Purpose | State and side effects |
 | --- | --- | --- |
 | `GET /api/health` | Process health check | None |
-| `POST /api/chat` | Bounded multi-turn study chat | Browser supplies history |
-| `POST /api/explain` | One-shot styled explanation | None |
+| `POST /api/chat` | Bounded multi-turn study chat | Successful Q&A is eligible for journal capture |
+| `POST /api/explain` | One-shot styled explanation | Successful Q&A is eligible for journal capture |
 | `POST /api/quiz/generate` | Generate and validate five questions | Answer key stored temporarily |
 | `POST /api/quiz/submit` | Deterministic Python scoring | Quiz removed after submission |
 | `POST /api/study-plan` | Generate and validate a 7/30-day plan | None on backend |
 | `POST /api/documents/upload` | Parse, chunk, and embed a document | Temporary process memory |
-| `POST /api/documents/ask` | Retrieve context and generate a grounded answer | Reads temporary indexes |
+| `POST /api/documents/ask` | Search temporary indexes and generate a grounded answer | Successful Q&A is eligible for journal capture |
 | `DELETE /api/documents/{id}` | Remove document and index | Deletes temporary state |
+| `/api/journal/*` | Manage journal entries, settings, and PDF export | Local SQLite journal and settings |
+| `/api/knowledge/*` | Read processing status, topics, concepts, and relations | Local SQLite knowledge data |
 
 FastAPI serves the static frontend after registering all API routes.
 
@@ -162,6 +175,14 @@ retrieved excerpts + source metadata + user question
 
 Only retrieved chunks are supplied to Qwen. When no chunk meets the relevance threshold, generation is skipped and the API returns an insufficient-evidence response. Source metadata includes the filename, a PDF page number when available (otherwise chunk position), and a short excerpt.
 
+## Learning Journal and Knowledge Flow
+
+When automatic recording is enabled, successful Chat, Explain, and document answers are saved with the original question and any RAG source metadata. Users can mark important difficulties and export the selected records to PDF. [Learning Journal design and API](LEARNING_JOURNAL.md)
+
+The same SQLite transaction queues a job for the saved entry. A worker waits for idle local inference capacity, then extracts structured knowledge with Qwen and uses BGE-M3 embeddings to find candidate matches. It persists topics, concepts, and supported relationships with journal evidence. [Knowledge Engine design and API](KNOWLEDGE_ENGINE.md)
+
+The Knowledge Map reads stored topics and relationships through the knowledge APIs. Mind Map organizes concepts by topic and can show supported component branches. Knowledge Graph renders stored concept relationships. [Knowledge Map guide](KNOWLEDGE_MAP.md)
+
 ## State and Storage Model
 
 | State | Owner | Lifetime |
@@ -173,6 +194,9 @@ Only retrieved chunks are supplied to Qwen. When no chunk meets the relevance th
 | Generated Study Plan | Browser memory/DOM | Until page refresh |
 | Parsed documents | FastAPI process dictionary | Until deletion or restart |
 | Chunks and embeddings | FastAPI process dictionary | Until deletion or restart |
+| Journal entries and auto-recording preference | Local SQLite | Across restarts |
+| Extraction jobs, topics, concepts, and relationship evidence | Local SQLite | Across restarts |
+| Knowledge Map search, collapse, and dragged positions | Browser memory | Until page refresh |
 
 This model is intentionally simple for v1 and is not suitable for multiple untrusted users on a shared public server.
 
@@ -188,7 +212,7 @@ The application is designed for local processing, not as an absolute privacy or 
 - Frontend output uses safe DOM construction instead of executing AI-generated or uploaded HTML.
 - Technical backend errors are mapped to user-facing codes instead of exposing tracebacks.
 
-Important limits remain: there is no authentication, user isolation, rate limiting, durable audit log, malware scanning, or OCR. Anyone who can reach a publicly exposed instance could use its local resources and share the same process-memory stores. The current server should therefore bind to loopback for normal use.
+The app is designed for a single user on a loopback server. Anyone who can reach a publicly exposed instance can access the shared journal and knowledge data and use local inference resources. The application has no authentication, per-user storage, rate limiting, durable audit log, malware scanning, or OCR.
 
 ## Local / Zero-Paid-API Architecture
 
